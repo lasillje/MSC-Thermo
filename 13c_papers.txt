@@ -1,0 +1,20 @@
+-- 13C Ecoli BW25113 papers
+
+https://doi.org/10.1016/j.ymben.2018.08.013
+	- Strain: Wild-type E. coli BW25113
+	- Conditions: WT-Glc_I, WT_Ace_I (cross feeding)
+	- Batch growth
+	
+DOI:10.1038/msb.2011.9
+	- Strain: E. coli BW25113
+	- Conditions: WT-Glc_I, WT-Gal_I
+	- Batch growth
+
+https://doi.org/10.1186/s13068-019-1372-4
+	- Strain HJ06, HJ06C (BW25113)
+	- Conditions: WT-Glyc_I
+	
+https://doi.org/10.1186/s13068-016-0591-1
+	- Strain: WT and ptsG knockout
+	- Conditions: dptsG-Glc_I, Glc_I, Glyc_I
+
