@@ -8,6 +8,9 @@ def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 
     "Returns a list of blocked reactions. Does not remove the reactions from the model."
 
     blocked = find_blocked_reactions(tmodel, processes = processes)
+    to_keep = [x for x in blocked if "biomass" in x]
+    blocked = [x for x in blocked if x not in to_keep]
+
     write_to_log(output_log, f" - Found {len(blocked)} blocked reactions under {condition}")
     for rxn in blocked:
         write_to_log(output_log, f" --- Blocked reaction: {rxn}")
