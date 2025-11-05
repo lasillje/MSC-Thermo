@@ -515,3 +515,176 @@ def constrain_bounds_fva(tmodel, output_log: str):
         r.lower_bound, r.upper_bound = lower_bound, upper_bound
 
     return tmodel
+
+def run_optimization(tmodel, name: str, condition :str, input_exp: str, input_conc: str, input_metabolomics: str, input_gams: str, output_log: str, include_CO2: bool, include_O2: bool, allow_other_excr: bool):
+
+    df_conc = hl.excel_to_df(input_gams)["ConcLimits"]
+
+    # Rearrange data for easier use:
+    df_conc = df_conc.reset_index()
+    df_conc["met"] = df_conc["dim1"] + "_"+ df_conc["dim2"]
+    df_conc = df_conc.pivot_table(columns="dim3", values="Value", index="met")
+
+    # Import experimental data:
+    reg_data = pd.read_csv(input_exp)
+    write_to_log(output_log, f"Reading experimental flux data: {input_exp}")
+
+    reg_data.set_index(["cond", "rxn"], inplace=True) 
+    #reg_data.head()
+
+    # Store gas fluxes:
+    reg_data_gas = reg_data.swaplevel().copy()
+    reg_data_gas = reg_data_gas.loc[["EX_co2", "EX_o2"]]
+    reg_data_gas = reg_data_gas.swaplevel()
+    #reg_data_gas
+
+    if include_CO2 is False:
+        reg_data_no_gas = reg_data.swaplevel().copy()
+        reg_data_no_gas = reg_data_no_gas.drop(["EX_co2"])
+        reg_data_no_gas = reg_data_no_gas.swaplevel()
+        reg_data = reg_data_no_gas
+        write_to_log(output_log, f" - ignoring CO2 data")
+        
+        
+    if include_O2 is False:
+        reg_data_no_gas = reg_data.swaplevel().copy()
+        reg_data_no_gas = reg_data_no_gas.drop(["EX_o2"]) 
+        reg_data_no_gas = reg_data_no_gas.swaplevel()
+        reg_data = reg_data_no_gas
+        write_to_log(output_log, f" - ignoring O2 data")
+
+    # Import experimental data:
+    conc_data = pd.read_csv(input_conc)
+    write_to_log(output_log, f"Reading experimental extracellular concentration data: {input_conc}")
+
+    conc_data.set_index(["cond", "met"], inplace=True) 
+    conc_data.head()
+
+    #Should probably change this to just the given condition..
+    volume_data = pd.DataFrame({cond: {"c": 1.0} for cond in CONDITIONS_REGRESS} ).T #specify the volume fractions for each condition
+    volume_data.head()
+
+    # Import experimental data:
+    write_to_log(output_log, f"Reading intracellular metabolite concentration data: {input_metabolomics}")
+    met_data = pd.read_csv(input_metabolomics)
+    met_data.set_index(["cond", "met"], inplace=True) 
+    met_data.head()
+
+    conds_with_data = list(met_data.reset_index().cond.unique())
+    missing_conds = [cond for cond in CONDITIONS_REGRESS if cond not in conds_with_data]
+
+    df_missing = pd.DataFrame({"cond": missing_conds, 
+                            "met": "g6p",   # code doesn't deal well if we type a non-existince met here...
+                            "mean": np.nan, 
+                            "sd": np.nan, }).set_index(["cond", "met"])
+
+    met_data = pd.concat([met_data, df_missing])
+
+    # Store the indices of all reactions:
+    map_rxn_id = {rxn.id: index for index, rxn in enumerate(tmodel.reactions)}
+
+    exchanges = [rxn.id for rxn in tmodel.exchanges]
+
+    exchanges_to_relax = ["EX_C", "EX_h", "EX_h2o", "EX_k", "EX_nh3", "EX_pi", "EX_so4"]
+
+    if include_CO2 is False:
+        exchanges_to_relax += ["EX_co2"]
+        
+    if include_O2 is False:
+        exchanges_to_relax += ["EX_o2"]
+
+    if allow_other_excr is True:
+        upper_bound_exchanges = 100
+    else:
+        upper_bound_exchanges = 0
+
+    settings_tfba = {"error_type": "covariance",
+                    "qnorm": 1,
+                    "alpha": 0.95, 
+                    "epsilon": 0.5,
+                    "nullspace": None,
+                    "gdiss_constraint": True,
+                    "sigmac_limit": 130}
+
+
+    settings_regression = {"flux_data": reg_data,
+                        "metabolite_data": met_data,
+                        "volume_data": volume_data,
+                        "conc_units": "mM",
+                        "conc_fit": False,
+                        "flux_fit": True,
+                        "drG_fit": True, 
+                        "resnorm": 1, 
+                        "error_type": "covariance"}
+
+    #Initialize model:
+    tmodel.m = None  # clear any previously build optimization models 
+    tmodel.objective = tmodel.reactions.biomass_EX      # needed, otherwise add_TFBA_variables() gives an error due to lack of an obj. function
+
+    # Add thermodynamics constraints
+    tmodel.add_TFBA_variables(conds=[condition], **settings_tfba) 
+
+    # Setup regression to experimental data:
+    tmodel.regression([condition], **settings_regression)
+    tmodel.m.update()
+
+    
+    # Display objective prior to adding RQ as an additional objective:
+#     print("Before: ", tmodel.m.getObjective())
+    write_to_log(output_log, f" - Objective function before: {tmodel.m.getObjective()}")
+    
+    
+    # Determine RQ for the given condition:
+    data_gas = reg_data_gas.loc[condition]
+    vo2, vo2_err = data_gas.loc["EX_o2"]
+    vco2, vco2_err = data_gas.loc["EX_co2"]
+    rq = - vco2 / vo2
+    rq_err = rq * np.sqrt( (vo2_err / vo2)**2 + (vco2_err / vco2)**2)
+    write_to_log(output_log, f" - RQ: {rq :.2} (vCO2 = {vco2 :.3} / vO2 = {vo2 :.3})")
+
+    
+    # Add new constraint - residual of RQ: 
+    resrq = tmodel.m.addMVar(lb=0, ub=GRB.INFINITY, shape=(1,1), name="resRQ") 
+    mrq = tmodel.m.addMVar(lb=0, ub=GRB.INFINITY, shape=(1,1), name="RQ") 
+    tmodel.mvars["resRQ"] = resrq
+    tmodel.mvars["rq"] = mrq
+    
+    tmodel.m.addConstr(tmodel.mvars["resRQ"][0, 0] >= ( (mrq - rq)/rq_err ), name = "resRQ_pos")
+    tmodel.m.addConstr(tmodel.mvars["resRQ"][0, 0] >= (-(mrq - rq)/rq_err ), name = "resRQ_neg")
+    
+    
+    # Impose RQ on the gas fluxes:
+    idx_o2 = map_rxn_id["EX_o2"]
+    idx_co2 = map_rxn_id["EX_co2"]   
+    tmodel.m.addConstr(tmodel.mvars["v"][0, idx_co2] == (-mrq)*tmodel.mvars["v"][0, idx_o2], name="enforce_RQ")
+    tmodel.m.update()
+
+    # Update objective function to include the new RQ constraint:
+    # (+ adjust weight of each term, giving equal weight to the RQ and each of the fluxes being fit)
+    no_fluxes = len(list(reg_data.unstack()["mean"].T.index) )
+    initial_weight = 1/no_fluxes
+    new_weight = 1/(no_fluxes + 1)   # to account for RQ constraint
+    
+    # Equal weight to RQ and resflx:
+    tmodel.m.setObjective(tmodel.m.getObjective() - initial_weight*tmodel.mvars["resflx"].sum() + new_weight*(resrq.sum() + tmodel.mvars["resflx"].sum()), GRB.MINIMIZE)
+    
+    write_to_log(output_log, f" - Objective function after: {tmodel.m.getObjective()}")
+    
+    # Write model for optimization on the HPC cluster:
+    # model_filename = f"{output_log}{path.sep}single_{CONDITION}_fit-co2-{INCLUDE_CO2}_fit-o2-{INCLUDE_O2}_allow-excretion-{ALLOW_OTHER_EXCRETION}.mps"
+    # tmodel.m.write(model_filename)
+    # write_to_log(output_log, f"Saved model to: {model_filename}")
+
+    tmodel.m.Params.TimeLimit = 3600
+    tmodel.m.Params.Threads = 16    
+    tmodel.m.optimize()
+    
+    try:
+        sols = tmodel.solution()
+        best_solution = sols[:-1]
+        best_solution.to_csv(f"solutions{path.sep}{name}_{condition}_SOLUTION.csv")
+    except:
+        print("Failed to save solution to csv, falling back to Gurobi .sol output")
+        tmodel.m.write(f"solutions{path.sep}{name}_{condition}_SOLUTION.sol")
+
+    return tmodel

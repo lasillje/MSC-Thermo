@@ -2,22 +2,43 @@ import os.path as path
 from cobra.flux_analysis import find_blocked_reactions
 import cobra
 import thermo_flux
+import numpy as np
 from thermo_flux.core.model import ThermoModel
 from scripts.logger import write_to_log
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns  # optional but nicer
+import scipy
 
 def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1):
     "Returns a list of blocked reactions. Does not remove the reactions from the model."
 
-    blocked = find_blocked_reactions(tmodel, processes = processes)
-    to_keep = [x for x in blocked if "biomass" in x]
+    S = cobra.util.array.create_stoichiometric_matrix(tmodel)
+    nullspace = scipy.linalg.null_space(S)
+    blocked_idx = np.where(np.all(np.isclose(nullspace, 0), axis=1))[0]
+    blocked = [tmodel.reactions[i].id for i in blocked_idx]
+    print("Using nullspace analysis to find blocked reactions..")
+
+    #blocked = find_blocked_reactions(tmodel, open_exchanges=True, processes = processes)
+    to_keep = []
+    req_r = ["EX"]
+
+    for r in tmodel.reactions:
+        if (any(x in r.id for x in req_r) or r.boundary or any(m.compartment == "e" for m in r.metabolites) or any(x in r.reaction for x in ["ATP", "ADP", "NAD", "FAD", "CoA"])):
+            write_to_log(output_log, f"Kept {r.id}...")
+            to_keep.append(r.id)
+
+    for r in tmodel.reactions:
+        if any(len(m.reactions) <= 1 for m in r.metabolites):
+            write_to_log(output_log, f"Kept {r.id}...")
+            to_keep.append(r.id)
+
     blocked = [x for x in blocked if x not in to_keep]
 
     write_to_log(output_log, f" - Found {len(blocked)} blocked reactions under {condition}")
     for rxn in blocked:
         write_to_log(output_log, f" --- Blocked reaction: {rxn}")
+
     return(blocked)
 
 def count_blocked_pathways(reactions, name, condition, model_xlsx: str):
