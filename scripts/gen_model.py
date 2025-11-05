@@ -15,6 +15,7 @@ from thermo_flux.io import load_excel as ex
 import gurobipy as gp
 from scripts.logger import write_to_log
 from gurobipy import GRB
+from cobra.flux_analysis import flux_variability_analysis
 
 CONDITIONS_REGRESS = ["WT-Glc_I", "WT-Gal_I", "WT-Fruc_I", "WT-Mann_I", "dptsG-Glc_I", "WT-Ace_I", "WT-Succ_I", "WT-Fum_I", "WT-Glyc_I", "WT-Pyr_I", "WT-GlyCAA_II"];
 
@@ -484,5 +485,33 @@ def regress_model(tmodel, condition :str, input_exp: str, input_conc: str, input
         tmodel.metabolites.get_by_id(met).lower_bound = Q_(row["conc_M_min"], "M")
         tmodel.metabolites.get_by_id(met).upper_bound = Q_(row["conc_M_max"], "M")
         write_to_log(output_log, f" - {met}: ({tmodel.metabolites.get_by_id(met).lower_bound :.3}, {tmodel.metabolites.get_by_id(met).upper_bound :.3})")
+
+    return tmodel
+
+def constrain_bounds_fva(tmodel, output_log: str):
+    "Tighten bounds of a ThermoModel's reactions"
+    all_reactions = [r.id for r in tmodel.reactions]
+    fva = flux_variability_analysis(tmodel, reaction_list=all_reactions, fraction_of_optimum=1.0, processes=1)
+
+    for r_id, row in fva.iterrows():
+        if r_id not in tmodel.reactions:
+            write_to_log(output_log, f"{r_id} is not a valid reaction. Skipping.")
+            continue
+        r = tmodel.reactions.get_by_id(r_id)
+        fmin, fmax = float(row["minimum"]), float(row["maximum"])
+
+        write_to_log(output_log, f"FVA: {r.id} bounds are {fmin}, {fmax}. Experimental bounds are {r.lower_bound}, {r.upper_bound} ")
+
+        lower_bound = max(r.lower_bound, fmin)
+        upper_bound = min(r.upper_bound, fmax)
+
+        if lower_bound > upper_bound:
+            lower_bound = fmin
+            upper_bound = fmax
+            write_to_log(output_log, f"Lower bound higher than upper ({lower_bound}, {upper_bound}). Falling back to {fmin}, {fmax}")
+        
+        write_to_log(output_log, f"{r.id} new bounds are {lower_bound}, {upper_bound}")
+
+        r.lower_bound, r.upper_bound = lower_bound, upper_bound
 
     return tmodel
