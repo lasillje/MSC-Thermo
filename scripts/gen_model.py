@@ -16,6 +16,8 @@ import gurobipy as gp
 from scripts.logger import write_to_log
 from gurobipy import GRB
 
+CONDITIONS_REGRESS = ["WT-Glc_I", "WT-Gal_I", "WT-Fruc_I", "WT-Mann_I", "dptsG-Glc_I", "WT-Ace_I", "WT-Succ_I", "WT-Fum_I", "WT-Glyc_I", "WT-Pyr_I", "WT-GlyCAA_II"];
+
 def gen_model(name: str, model_xlsx: str, kegg: str, reed: str, inchi:str, gams: str, output_log: str, add_o2: bool, add_co2: bool):
     "Generates a base Thermo-Flux model given the input files"
     tmodel = ex.create_thermo_model(name, model_excel=model_xlsx, keggids_csv=kegg, edit_mets={})
@@ -321,5 +323,166 @@ def gen_model(name: str, model_xlsx: str, kegg: str, reed: str, inchi:str, gams:
     # Update thermodynamic information:
     write_to_log(output_log, f"Updating thermodynamic information")
     tmodel.update_thermo_info(fit_unknown_dfG0=True)
+
+    return tmodel
+
+
+def regress_model(tmodel, condition :str, input_exp: str, input_conc: str, input_metabolomics: str, input_gams: str, relax_flux_bounds, include_CO2: bool, include_O2: bool, allow_other_excr: bool, output_log: str):
+    "Apply regression to the Tmodel (not gurobi model) for FBA and blocked reaction analysis"
+    df_conc = hl.excel_to_df(input_gams)["ConcLimits"]
+
+    # Rearrange data for easier use:
+    df_conc = df_conc.reset_index()
+    df_conc["met"] = df_conc["dim1"] + "_"+ df_conc["dim2"]
+    df_conc = df_conc.pivot_table(columns="dim3", values="Value", index="met")
+
+    # Import experimental data:
+    reg_data = pd.read_csv(input_exp)
+    write_to_log(output_log, f"Reading experimental flux data: {input_exp}")
+
+    reg_data.set_index(["cond", "rxn"], inplace=True) 
+    reg_data.head()
+
+    # Store gas fluxes:
+    reg_data_gas = reg_data.swaplevel().copy()
+    reg_data_gas = reg_data_gas.loc[["EX_co2", "EX_o2"]]
+    reg_data_gas = reg_data_gas.swaplevel()
+    reg_data_gas
+
+    if include_CO2 is False:
+        reg_data_no_gas = reg_data.swaplevel().copy()
+        reg_data_no_gas = reg_data_no_gas.drop(["EX_co2"])
+        reg_data_no_gas = reg_data_no_gas.swaplevel()
+        reg_data = reg_data_no_gas
+        write_to_log(output_log, f" - ignoring CO2 data")
+        
+        
+    if include_O2 is False:
+        reg_data_no_gas = reg_data.swaplevel().copy()
+        reg_data_no_gas = reg_data_no_gas.drop(["EX_o2"]) 
+        reg_data_no_gas = reg_data_no_gas.swaplevel()
+        reg_data = reg_data_no_gas
+        write_to_log(output_log, f" - ignoring O2 data")
+
+    # Import experimental data:
+    conc_data = pd.read_csv(input_conc)
+    write_to_log(output_log, f"Reading experimental extracellular concentration data: {input_conc}")
+
+    conc_data.set_index(["cond", "met"], inplace=True) 
+    conc_data.head()
+
+    #Should probably change this to just the given condition..
+    volume_data = pd.DataFrame({cond: {"c": 1.0} for cond in CONDITIONS_REGRESS} ).T #specify the volume fractions for each condition
+    volume_data.head()
+
+    # Import experimental data:
+    write_to_log(output_log, f"Reading intracellular metabolite concentration data: {input_metabolomics}")
+    met_data = pd.read_csv(input_metabolomics)
+    met_data.set_index(["cond", "met"], inplace=True) 
+    met_data.head()
+
+    conds_with_data = list(met_data.reset_index().cond.unique())
+    missing_conds = [cond for cond in CONDITIONS_REGRESS if cond not in conds_with_data]
+
+    df_missing = pd.DataFrame({"cond": missing_conds, 
+                            "met": "g6p",   # code doesn't deal well if we type a non-existince met here...
+                            "mean": np.nan, 
+                            "sd": np.nan, }).set_index(["cond", "met"])
+
+    met_data = pd.concat([met_data, df_missing])
+
+    # Store the indices of all reactions:
+    map_rxn_id = {rxn.id: index for index, rxn in enumerate(tmodel.reactions)}
+
+    exchanges = [rxn.id for rxn in tmodel.exchanges]
+
+    exchanges_to_relax = ["EX_C", "EX_h", "EX_h2o", "EX_k", "EX_nh3", "EX_pi", "EX_so4"]
+
+    if include_CO2 is False:
+        exchanges_to_relax += ["EX_co2"]
+        
+    if include_O2 is False:
+        exchanges_to_relax += ["EX_o2"]
+
+    if allow_other_excr is True:
+        upper_bound_exchanges = 100
+    else:
+        upper_bound_exchanges = 0
+
+    settings_tfba = {"error_type": "covariance",
+                    "qnorm": 1,
+                    "alpha": 0.95, 
+                    "epsilon": 0.5,
+                    "nullspace": None,
+                    "gdiss_constraint": True,
+                    "sigmac_limit": 130}
+
+
+    settings_regression = {"flux_data": reg_data,
+                        "metabolite_data": met_data,
+                        "volume_data": volume_data,
+                        "conc_units": "mM",
+                        "conc_fit": False,
+                        "flux_fit": True,
+                        "drG_fit": True, 
+                        "resnorm": 1, 
+                        "error_type": "covariance"}
+
+    write_to_log(output_log, f"Setting up regressions:")
+    write_to_log(output_log, f" - exchanges to be relaxed: {exchanges_to_relax}")
+    write_to_log(output_log, f" - stdev of experimental fluxes increased by factor of: {relax_flux_bounds}")
+    write_to_log(output_log, f" - settings for tFBA: {settings_tfba}")
+    write_to_log(output_log, f" - settings for regression: {settings_regression}")
+
+    # Reset all flux bounds to +- 100:
+    for rxn in tmodel.reactions:
+        tmodel.reactions.get_by_id(rxn.id).lower_bound = -100
+        tmodel.reactions.get_by_id(rxn.id).upper_bound = 100
+    
+    # Add non-growth associate ATP maintenance cost:
+    tmodel.reactions.ATPHYD.lower_bound = 3.15
+
+    # Fix exchange reaction directions:
+    for rxn in exchanges:
+        tmodel.reactions.get_by_id(rxn).lower_bound = 0
+        tmodel.reactions.get_by_id(rxn).upper_bound = upper_bound_exchanges
+
+    # Allow for excretion of selected metabolites:
+    #for rxn in EXCEPTIONS:
+    #    tmodel.reactions.get_by_id(rxn).lower_bound = 0
+    #    tmodel.reactions.get_by_id(rxn).upper_bound = +100
+        
+    # Relax essential exchanges:
+    for rxn_rel in exchanges_to_relax:
+        tmodel.reactions.get_by_id(rxn_rel).lower_bound = -100
+        tmodel.reactions.get_by_id(rxn_rel).upper_bound = +100
+
+
+    # Fix flux for the measured exchange reactions:
+    for rxn, row in reg_data.loc[condition].iterrows():
+        tmodel.reactions.get_by_id(rxn).lower_bound = -100
+        tmodel.reactions.get_by_id(rxn).upper_bound = 100
+        tmodel.reactions.get_by_id(rxn).lower_bound = row["mean"] - relax_flux_bounds * row["sd"]
+        tmodel.reactions.get_by_id(rxn).upper_bound = row["mean"] + relax_flux_bounds * row["sd"]
+        write_to_log(output_log, f" - {rxn}: ({tmodel.reactions.get_by_id(rxn).lower_bound :.3}, {tmodel.reactions.get_by_id(rxn).upper_bound :.3})")
+
+    if condition.startswith("dptsG-Glc"):
+        tmodel.reactions.GLCpts.lower_bound = 0
+        tmodel.reactions.GLCpts.upper_bound = 0
+        write_to_log(output_log, f" - blocked GLCpts")
+
+        
+    # Set metabolite concentrations to the values in the GAMS model:   
+    for met, row in df_conc.iterrows():
+        tmodel.metabolites.get_by_id(met).upper_bound = Q_(row["up"], "mM")
+        tmodel.metabolites.get_by_id(met).lower_bound = Q_(row["lo"], "mM")
+        
+    # Fix concentration for the measured extracellular metabolites:
+    for met, row in conc_data.loc[condition].iterrows():
+        tmodel.metabolites.get_by_id(met).lower_bound = Q_(1e-9, "M")
+        tmodel.metabolites.get_by_id(met).upper_bound = Q_(100, "M")
+        tmodel.metabolites.get_by_id(met).lower_bound = Q_(row["conc_M_min"], "M")
+        tmodel.metabolites.get_by_id(met).upper_bound = Q_(row["conc_M_max"], "M")
+        write_to_log(output_log, f" - {met}: ({tmodel.metabolites.get_by_id(met).lower_bound :.3}, {tmodel.metabolites.get_by_id(met).upper_bound :.3})")
 
     return tmodel
