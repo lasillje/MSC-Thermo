@@ -13,13 +13,13 @@ import scipy
 def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1):
     "Returns a list of blocked reactions. Does not remove the reactions from the model."
 
-    S = cobra.util.array.create_stoichiometric_matrix(tmodel)
-    nullspace = scipy.linalg.null_space(S)
-    blocked_idx = np.where(np.all(np.isclose(nullspace, 0), axis=1))[0]
-    blocked = [tmodel.reactions[i].id for i in blocked_idx]
-    print("Using nullspace analysis to find blocked reactions..")
+    #S = cobra.util.array.create_stoichiometric_matrix(tmodel)
+    #nullspace = scipy.linalg.null_space(S)
+    #blocked_idx = np.where(np.all(np.isclose(nullspace, 0), axis=1))[0]
+    #blocked = [tmodel.reactions[i].id for i in blocked_idx]
+    #print("Using nullspace analysis to find blocked reactions..")
 
-    #blocked = find_blocked_reactions(tmodel, open_exchanges=True, processes = processes)
+    blocked = find_blocked_reactions(tmodel, open_exchanges=True, processes = processes)
     to_keep = []
     req_r = ["EX"]
 

@@ -681,7 +681,7 @@ def run_optimization(tmodel, name: str, condition :str, input_exp: str, input_co
     
     try:
         sols = tmodel.solution()
-        best_solution = sols[:-1]
+        best_solution = sols[-1]
         best_solution.to_csv(f"solutions{path.sep}{name}_{condition}_SOLUTION.csv")
     except:
         print("Failed to save solution to csv, falling back to Gurobi .sol output")
