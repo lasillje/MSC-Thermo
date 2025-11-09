@@ -9,48 +9,84 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns  # optional but nicer
 import scipy
+import requests
+from time import sleep
 
 def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1):
     "Returns a list of blocked reactions. Does not remove the reactions from the model."
 
-    #S = cobra.util.array.create_stoichiometric_matrix(tmodel)
-    #nullspace = scipy.linalg.null_space(S)
-    #blocked_idx = np.where(np.all(np.isclose(nullspace, 0), axis=1))[0]
-    #blocked = [tmodel.reactions[i].id for i in blocked_idx]
-    #print("Using nullspace analysis to find blocked reactions..")
-
-    blocked = find_blocked_reactions(tmodel, open_exchanges=True, processes = processes)
-    to_keep = []
-    req_r = ["EX"]
-
-    for r in tmodel.reactions:
-        if (any(x in r.id for x in req_r) or r.boundary or any(m.compartment == "e" for m in r.metabolites) or any(x in r.reaction for x in ["ATP", "ADP", "NAD", "FAD", "CoA"])):
-            write_to_log(output_log, f"Kept {r.id}...")
-            to_keep.append(r.id)
-
-    for r in tmodel.reactions:
-        if any(len(m.reactions) <= 1 for m in r.metabolites):
-            write_to_log(output_log, f"Kept {r.id}...")
-            to_keep.append(r.id)
-
-    blocked = [x for x in blocked if x not in to_keep]
+    blocked = find_blocked_reactions(tmodel, open_exchanges=False, processes = processes)
 
     write_to_log(output_log, f" - Found {len(blocked)} blocked reactions under {condition}")
     for rxn in blocked:
         write_to_log(output_log, f" --- Blocked reaction: {rxn}")
 
+    print(blocked)
     return(blocked)
+
+def list_and_remove_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1):
+    b = list_blocked_reactions(tmodel, condition, output_log, 1)
+    tmodel.remove_reactions(b)
+    for rxn in tmodel.reactions:
+        thermo_flux.tools.drg_tools.reaction_balance(rxn, balance_charge=True, balance_mg=False)
+    tmodel.update_thermo_info(fit_unknown_dfG0=True)
+    return tmodel
+
+def refine_subsystems(df):
+    "Try to refine subsystems further based on BiGG database"
+
+    print("Refining subsystems...")
+
+    API_MODEL = "iML1515"
+    API_BASE = f"http://bigg.ucsd.edu/api/v2/models/{API_MODEL}/reactions/"
+
+    df["RefinedSubsystem"] = None
+
+    for i, rxn_id in enumerate(df["Abbrevation"]):
+        rxn_id = str(rxn_id).strip()
+        if not rxn_id:
+            continue
+        url = API_BASE + rxn_id
+        try:
+            print(f"Searching for refined subsystem for {rxn_id} at: {url}")
+            r = requests.get(url, timeout=5)
+            if r.status_code == 200:
+                data = r.json()
+                subsystem = data.get("subsystem")
+
+                # Some outputs may have different formats apparently
+                if not subsystem and "results" in data and len(data["results"]) > 0:
+                    subsystem = data["results"][0].get("subsystem")
+
+                if subsystem:
+                    df.loc[i, "RefinedSubsystem"] = subsystem
+                    print(f"[{i+1}] {rxn_id}: {subsystem}")
+                else:
+                    df.loc[i, "RefinedSubsystem"] = "Not found"
+                    print(f"[{i+1}] {rxn_id}: subsystem missing")
+            else:
+                df.loc[i, "RefinedSubsystem"] = df.loc[i, "Subsystem"] #"Not in BiGG"
+                print(f"[{i+1}] {rxn_id}: not found ({r.status_code})")
+
+        except Exception as e:
+            print(f"[{i+1}] {rxn_id}: error {e}")
+            df.loc[i, "RefinedSubsystem"] = "Error"
+
+        sleep(0.2)
+
 
 def count_blocked_pathways(reactions, name, condition, model_xlsx: str):
     "Counts and plots blocked pathways from a given list of blocked reactions and model xlsx file "
     df = pd.read_excel(model_xlsx, sheet_name="Reactions")
 
+    refine_subsystems(df)
+
     df.columns = df.columns.str.strip()
     blocked_rxns = reactions
 
     df_blocked = df[df["Abbrevation"].isin(blocked_rxns)]
-    subsystem_counts = df_blocked["Subsystem"].value_counts().reset_index()
-    subsystem_counts.columns = ["Subsystem", "BlockedReactionCount"]
+    subsystem_counts = df_blocked["RefinedSubsystem"].value_counts().reset_index()
+    subsystem_counts.columns = ["RefinedSubsystem", "BlockedReactionCount"]
 
     print(subsystem_counts.head())
 
@@ -58,7 +94,7 @@ def count_blocked_pathways(reactions, name, condition, model_xlsx: str):
     plt.figure(figsize=(10, 6))
     sns.barplot(
         data=subsystem_counts,
-        y="Subsystem",
+        y="RefinedSubsystem",
         x="BlockedReactionCount",
         palette="viridis"
     )
@@ -67,11 +103,12 @@ def count_blocked_pathways(reactions, name, condition, model_xlsx: str):
     plt.ylabel("Subsystem")
     plt.tight_layout()
     plt.savefig(f"graphs{path.sep}blocked_abs_{name}_{condition}.png")
+    plt.savefig(f"graphs{path.sep}blocked_abs_{name}_{condition}.svg")
 
-    subsystem_total = df["Subsystem"].value_counts().reset_index()
-    subsystem_total.columns = ["Subsystem", "TotalReactions"]
+    subsystem_total = df["RefinedSubsystem"].value_counts().reset_index()
+    subsystem_total.columns = ["RefinedSubsystem", "TotalReactions"]
 
-    merged = pd.merge(subsystem_total, subsystem_counts, on="Subsystem", how="left").fillna(0)
+    merged = pd.merge(subsystem_total, subsystem_counts, on="RefinedSubsystem", how="left").fillna(0)
     merged["FractionBlocked"] = merged["BlockedReactionCount"] / merged["TotalReactions"]
 
     merged = merged.sort_values("FractionBlocked", ascending=False)
@@ -80,7 +117,7 @@ def count_blocked_pathways(reactions, name, condition, model_xlsx: str):
     plt.figure(figsize=(10, 6))
     sns.barplot(
         data=merged,
-        y="Subsystem",
+        y="RefinedSubsystem",
         x="FractionBlocked",
         palette="magma"
     )
@@ -89,6 +126,7 @@ def count_blocked_pathways(reactions, name, condition, model_xlsx: str):
     plt.title("Fraction of Reactions Blocked per Subsystem")
     plt.tight_layout()
     plt.savefig(f"graphs{path.sep}blocked_rel_{name}_{condition}.png")
+    plt.savefig(f"graphs{path.sep}blocked_rel_{name}_{condition}.svg")
 
 
     return

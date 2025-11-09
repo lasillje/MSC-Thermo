@@ -328,7 +328,7 @@ def gen_model(name: str, model_xlsx: str, kegg: str, reed: str, inchi:str, gams:
     return tmodel
 
 
-def regress_model(tmodel, condition :str, input_exp: str, input_conc: str, input_metabolomics: str, input_gams: str, relax_flux_bounds, include_CO2: bool, include_O2: bool, allow_other_excr: bool, output_log: str):
+def apply_physio_data(tmodel, condition :str, input_exp: str, input_conc: str, input_metabolomics: str, input_gams: str, relax_flux_bounds, include_CO2: bool, include_O2: bool, allow_other_excr: bool, output_log: str):
     "Apply regression to the Tmodel (not gurobi model) for FBA and blocked reaction analysis"
     df_conc = hl.excel_to_df(input_gams)["ConcLimits"]
 
