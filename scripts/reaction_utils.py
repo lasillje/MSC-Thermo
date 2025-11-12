@@ -15,7 +15,7 @@ from time import sleep
 def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1):
     "Returns a list of blocked reactions. Does not remove the reactions from the model."
 
-    blocked = find_blocked_reactions(tmodel, open_exchanges=False, processes = processes)
+    blocked = find_blocked_reactions(tmodel, open_exchanges=True, processes = processes)
 
     write_to_log(output_log, f" - Found {len(blocked)} blocked reactions under {condition}")
     for rxn in blocked:
@@ -128,5 +128,45 @@ def count_blocked_pathways(reactions, name, condition, model_xlsx: str):
     plt.savefig(f"graphs{path.sep}blocked_rel_{name}_{condition}.png")
     plt.savefig(f"graphs{path.sep}blocked_rel_{name}_{condition}.svg")
 
-
     return
+
+
+def plot_calc_vs_exp(model_name: str, condition: str, sol_data: str, exp_data: str):
+
+    gurobi_df = pd.read_csv(sol_data)
+    exp_df = pd.read_csv(exp_data)
+
+    gurobi_fluxes = gurobi_df[['reaction', 'v']].copy()
+
+    exp_fluxes = exp_df[['cond', 'rxn', 'mean', 'sd']].copy()
+    exp_fluxes = exp_fluxes[exp_fluxes['cond'] == condition]
+
+    merged = pd.merge(exp_fluxes, gurobi_fluxes, left_on='rxn', right_on='reaction', how='inner')
+
+    plt.figure(figsize=(7,6))
+    ax = sns.scatterplot(
+        data=merged,
+        x='mean', 
+        y='v', 
+        hue='rxn',      # color by reaction
+        s=50,          # dot size
+        edgecolor='black'
+    )
+
+    plt.errorbar(
+        merged['mean'], merged['v'], 
+        xerr=merged['sd'], fmt='none', 
+        ecolor='gray', alpha=0.6
+    )
+
+    ax.axhline(0, color='black', lw=1)
+    ax.axvline(0, color='black', lw=1)
+    plt.xlim(-20, 20)
+    plt.ylim(-20, 20)
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.xlabel("Measured flux (mean +/- sd)")
+    plt.ylabel("Predicted flux")
+    plt.title(f"Flux comparison for {condition}")
+    plt.legend(title="Reaction", bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+    plt.show()
