@@ -12,10 +12,10 @@ import scipy
 import requests
 from time import sleep
 
-def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1):
+def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1, open_exch = False):
     "Returns a list of blocked reactions. Does not remove the reactions from the model."
 
-    blocked = find_blocked_reactions(tmodel, open_exchanges=True, processes = processes)
+    blocked = find_blocked_reactions(tmodel, open_exchanges = open_exch, processes = processes)
 
     write_to_log(output_log, f" - Found {len(blocked)} blocked reactions under {condition}")
     for rxn in blocked:

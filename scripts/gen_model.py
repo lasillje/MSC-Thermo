@@ -328,7 +328,7 @@ def gen_model(name: str, model_xlsx: str, kegg: str, reed: str, inchi:str, gams:
     return tmodel
 
 
-def apply_physio_data(tmodel, condition :str, input_exp: str, input_conc: str, input_metabolomics: str, input_gams: str, relax_flux_bounds, include_CO2: bool, include_O2: bool, allow_other_excr: bool, output_log: str):
+def apply_physio_data(tmodel, condition :str, input_exp: str, input_conc: str, input_metabolomics: str, input_gams: str, relax_flux_bounds, include_CO2: bool, include_O2: bool, allow_other_excr: bool, output_log: str, open_exchanges=False):
     "Apply regression to the Tmodel (not gurobi model) for FBA and blocked reaction analysis"
     df_conc = hl.excel_to_df(input_gams)["ConcLimits"]
 
@@ -396,6 +396,7 @@ def apply_physio_data(tmodel, condition :str, input_exp: str, input_conc: str, i
     map_rxn_id = {rxn.id: index for index, rxn in enumerate(tmodel.reactions)}
 
     exchanges = [rxn.id for rxn in tmodel.exchanges]
+    print(exchanges)
 
     exchanges_to_relax = ["EX_C", "EX_h", "EX_h2o", "EX_k", "EX_nh3", "EX_pi", "EX_so4"]
 
@@ -458,20 +459,39 @@ def apply_physio_data(tmodel, condition :str, input_exp: str, input_conc: str, i
         tmodel.reactions.get_by_id(rxn_rel).lower_bound = -100
         tmodel.reactions.get_by_id(rxn_rel).upper_bound = +100
 
+    # Only allow secretion for carbon sources other than the current condition
+    # Gets all exchange reactions for every condition and sets it to export only
+    # Export reactions for this specific condition will still be set to the physiological data in the step below
+    #if other_carbon_export_only:   
+        #exp_data = pd.read_csv(input_exp) 
+        #carbon_source_exchanges = [row["rxn"] for _, row in exp_data.iterrows()]
+        #print(carbon_source_exchanges)
+        
+        #CONDITIONS_TO_REGRESS = ["WT-Glc_I", "WT-Gal_I", "WT-Fruc_I", "WT-Mann_I", "dptsG-Glc_I", 
+#                         "WT-Ace_I", "WT-Succ_I", "WT-Fum_I", "WT-Glyc_I", "WT-Pyr_I",
+#                         "WT-GlyCAA_II"]
+
+     #   carbon_source_exchanges =["EX_glc", "EX_gal", "EX_fru", "EX_man", "EX_ac", "EX_succ", "EX_fum", "EX_glyc", "EX_pyr", "EX_gly"]
+        
+     #   exchange_rxn_set = set(carbon_source_exchanges)
+     #   for rxn in exchange_rxn_set:
+     #       tmodel.reactions.get_by_id(rxn).lower_bound = 0
+     #       tmodel.reactions.get_by_id(rxn).upper_bound = 100
 
     # Fix flux for the measured exchange reactions:
     for rxn, row in reg_data.loc[condition].iterrows():
         tmodel.reactions.get_by_id(rxn).lower_bound = -100
         tmodel.reactions.get_by_id(rxn).upper_bound = 100
-        tmodel.reactions.get_by_id(rxn).lower_bound = row["mean"] - relax_flux_bounds * row["sd"]
-        tmodel.reactions.get_by_id(rxn).upper_bound = row["mean"] + relax_flux_bounds * row["sd"]
-        write_to_log(output_log, f" - {rxn}: ({tmodel.reactions.get_by_id(rxn).lower_bound :.3}, {tmodel.reactions.get_by_id(rxn).upper_bound :.3})")
+
+        if not open_exchanges:
+            tmodel.reactions.get_by_id(rxn).lower_bound = row["mean"] - relax_flux_bounds * row["sd"]
+            tmodel.reactions.get_by_id(rxn).upper_bound = row["mean"] + relax_flux_bounds * row["sd"]
+            #write_to_log(output_log, f" - {rxn}: ({tmodel.reactions.get_by_id(rxn).lower_bound :.3}, {tmodel.reactions.get_by_id(rxn).upper_bound :.3})")
 
     if condition.startswith("dptsG-Glc"):
         tmodel.reactions.GLCpts.lower_bound = 0
         tmodel.reactions.GLCpts.upper_bound = 0
         write_to_log(output_log, f" - blocked GLCpts")
-
         
     # Set metabolite concentrations to the values in the GAMS model:   
     for met, row in df_conc.iterrows():
