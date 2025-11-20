@@ -12,7 +12,7 @@ import scipy
 import requests
 from time import sleep
 
-def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1, open_exch = False):
+def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1, open_exch = False, remove_orphans=True):
     "Returns a list of blocked reactions. Does not remove the reactions from the model."
 
     blocked = find_blocked_reactions(tmodel, open_exchanges = open_exch, processes = processes)
@@ -22,6 +22,7 @@ def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 
         write_to_log(output_log, f" --- Blocked reaction: {rxn}")
 
     print(blocked)
+    print(len(blocked))
     return(blocked)
 
 def list_and_remove_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1):
@@ -53,6 +54,9 @@ def refine_subsystems(df):
             if r.status_code == 200:
                 data = r.json()
                 subsystem = data.get("subsystem")
+
+                #if 'tRNA' in subsystem:
+                #    print(f"TRNA: {i}, {rxn_id}")
 
                 # Some outputs may have different formats apparently
                 if not subsystem and "results" in data and len(data["results"]) > 0:
