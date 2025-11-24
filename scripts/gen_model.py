@@ -308,11 +308,14 @@ def gen_model(name: str, model_xlsx: str, kegg: str, reed: str, inchi:str, gams:
 
 
     # Define biomass formation energy: dfG0(biomass) [kJ gCDW-1] = -2.692234848 fom Battley 1991
+    # structural UCFW = 24.190 Da (Battley 1991)
+    # dGf biomass: −65.10 kJ/C-mol (Battley 1991, referenced in DOI:10.3390/e22030277)
+    # dGf per gCDW = -2.69119470856
 
-    energy_diff = calc_dfG_transform(tmodel.metabolites.biomass_c) - calc_dfG_transform(tmodel.metabolites.biomass_e)
+    energy_diff = calc_dfG_transform(tmodel.metabolites.biomass_e) - calc_dfG_transform(tmodel.metabolites.biomass_c)
 
-    tmodel.metabolites.biomass_c.dfG0 = Q_(-2.692234848, "kJ/mol") * 1000    # values in J/gDW 
-    tmodel.metabolites.biomass_e.dfG0 = (Q_(-2.692234848, "kJ/mol") * 1000)  + energy_diff
+    tmodel.metabolites.biomass_c.dfG0 = (Q_(-2.692234848, "kJ/mol") * 1000) #+ energy_diff   # values in J/gDW 
+    tmodel.metabolites.biomass_e.dfG0 = (Q_(-2.692234848, "kJ/mol") * 1000) #+ energy_diff  # + energy_diff
 
     tmodel.reactions.biomass_ce.ignore_snd = True
     write_to_log(output_log, f"Ignored 2nd law for biomass_ce transport reaction")
