@@ -47,15 +47,40 @@ Next, In the pta/cpp/python/pybind11 we need to update the pybind version:
 git fetch --all
 git checkout v2.11.1
 ```
-Then we need to tell PTA where our gurobi source download is, for example:'
+Then we need to tell PTA where our gurobi source download is, for example:
 
 ```bash
 export GUROBI_HOME=/home/user/gurobi/gurobi1300/linux64
 ```
 
+This should also be put in either ~/.profile or ~/.bashrc
+
 After this, building needs to be ran in isolated mode and the build should succeed:
 ```bash
 CMAKE_PREFIX_PATH=$GUROBI_HOME pip install . --no-build-isolation
+```
+
+Now stuff like
+```python
+import enkie
+import pta
+
+model = pta.load_example_model("e_coli_core")
+model.reactions.BIOMASS_Ecoli_core_w_GAM.lower_bound = 0.5
+```
+
+should work.
+
+However, some functions also require Java to be installed, so if not done yet:
+
+```bash
+conda install openjdk
+java -version
+```
+
+and add the following to ~/.profile or ~/.bashrc :
+```bash
+export JAVA_HOME=$CONDA_PREFIX/lib/jvm
 ```
 
 After all this hassle PTA should work.

@@ -21,3 +21,12 @@ Change names variables -> conc_unit -> lnc_unit
 Add lnc_var_unit
 log scaling factor -> ln_scaling_factor     
 Check energy reaction transport -> should be 0
+Battley 1991
+
+From previous:
+    - Read:
+        Loopless sampling
+        Thermodynamic sampling
+    - Write:
+        Introduction / methods thermodynamic sampling
+            Why is it important, what are the principles, and why is it hard
