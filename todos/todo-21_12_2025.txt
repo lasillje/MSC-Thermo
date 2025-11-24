@@ -1,0 +1,23 @@
+M <-> mM
+
+Define concentration unit ('mM', 'M', etc.)
+        Automatically calculate scaling factor (mM -> 1e3, M -> 1, etc)
+    Calculate correction for each reaction for M -> mM conversion
+        log(1000)
+        RT
+        net stoichiometric change
+    Update ln_conc bounds
+        Based on conc unit
+            M = (1e-8, 1)
+                mM -> (1e-5, 1e3)
+    Change loop for metabolite bounds
+        met.lower_bound.m_as("conc unit)
+        same for upper
+    Update dRG constraints
+        Any gibbs energy linked to ln_conc
+            Update Gdiss in case of error_type=linear
+
+Change names variables -> conc_unit -> lnc_unit
+Add lnc_var_unit
+log scaling factor -> ln_scaling_factor     
+Check energy reaction transport -> should be 0

@@ -12,7 +12,7 @@ import scipy
 import requests
 from time import sleep
 
-def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1, open_exch = False, remove_orphans=True):
+def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1, open_exch = False):
     "Returns a list of blocked reactions. Does not remove the reactions from the model."
 
     blocked = find_blocked_reactions(tmodel, open_exchanges = open_exch, processes = processes)
@@ -34,7 +34,7 @@ def list_and_remove_blocked_reactions(tmodel, condition: str, output_log: str, p
     return tmodel
 
 def refine_subsystems(df):
-    "Try to refine subsystems further based on BiGG database"
+    "Try to refine subsystems further based on BiGG database "
 
     print("Refining subsystems...")
 

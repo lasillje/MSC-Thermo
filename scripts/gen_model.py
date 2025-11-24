@@ -7,6 +7,7 @@ import cobra
 import thermo_flux
 from thermo_flux.io import load_excel as ex
 from thermo_flux.core.model import ThermoModel
+from thermo_flux.tools.drg_tools import calc_dfG_transform
 from equilibrator_api import  Q_
 import pandas as pd
 from thermo_flux.io import helper_load as hl
@@ -83,7 +84,7 @@ def gen_model(name: str, model_xlsx: str, kegg: str, reed: str, inchi:str, gams:
     write_to_log(output_log, f"IPMex     reaction: {tmodel.reactions.IPMex}")
     write_to_log(output_log, f"EX_3c3hmp reaction: {tmodel.reactions.EX_3c3hmp}")
 
-    # ADD OROTATE TRANSPORT AND EXCHANGE:
+    # ADD OROTATE TRANSPORT AND EXCHANGE
 
     # Define extracellular orotate:
     oro_e = cobra.Metabolite(id="orot_e", compartment="e")
@@ -307,8 +308,11 @@ def gen_model(name: str, model_xlsx: str, kegg: str, reed: str, inchi:str, gams:
 
 
     # Define biomass formation energy: dfG0(biomass) [kJ gCDW-1] = -2.692234848 fom Battley 1991
+
+    energy_diff = calc_dfG_transform(tmodel.metabolites.biomass_c) - calc_dfG_transform(tmodel.metabolites.biomass_e)
+
     tmodel.metabolites.biomass_c.dfG0 = Q_(-2.692234848, "kJ/mol") * 1000    # values in J/gDW 
-    tmodel.metabolites.biomass_e.dfG0 = Q_(-2.692234848, "kJ/mol") * 1000 
+    tmodel.metabolites.biomass_e.dfG0 = (Q_(-2.692234848, "kJ/mol") * 1000)  + energy_diff
 
     tmodel.reactions.biomass_ce.ignore_snd = True
     write_to_log(output_log, f"Ignored 2nd law for biomass_ce transport reaction")

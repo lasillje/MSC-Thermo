@@ -10,28 +10,28 @@ from equilibrator_api import R, Q_
 
 def add_TFBA_variables(tmodel, m, conds=[''], error_type='linear',
                        qnorm=1, alpha=0.95, epsilon=0.5, nullspace=None,
-                       gdiss_constraint=False, sigmac_limit=12.3, split_v=False, big_M = False, conc_unit="mM"):
+                       gdiss_constraint=False, sigmac_limit=12.3, split_v=False, big_M = False, lnc_unit="mM"):
     
     """
     Generates gurobi model from thermo model. Contains constraints for FBA optimization
     """
+    
+    if lnc_unit not in ["mM", "M"]:
+        raise ValueError(f"Incorrect concentration unit: {lnc_unit}\nValid concentration units: M, mM")
 
-    conc_factor = 1
-    if conc_unit not in {"M", "mM"}:
-        raise ValueError("conc_unit must either be 'M' or 'mM'")
-    else:
-        print(f"Using concentration unit of {conc_unit}")
-        conc_factor = 1e3 if conc_unit == 'mM' else 1
+    print(f"Using conc unit: {lnc_unit}")
+    
+    scaling_term = { 'mM': 1e3, 'M': 1}
+    ln_scaling_term = np.log(scaling_term[lnc_unit])
+
     # RT term 
     RT = (R*tmodel.T.m_as('K')).m
-
+    
     # max flux
     max_flux = abs(np.array([(rxn.upper_bound, rxn.lower_bound) for rxn in tmodel.reactions])).max()
 
     # max_drG
     max_drG = tmodel.max_drG.m_as('kJ/mol')
-
-    print(max_drG)
     
     # generate stoichiometric matrix
     S = create_stoichiometric_matrix(tmodel) 
@@ -40,23 +40,24 @@ def add_TFBA_variables(tmodel, m, conds=[''], error_type='linear',
     Nc, Nr = S.shape  # number of compouds, number of reactions
     nconds = len(conds)  # number of conditions (for regression to multiple conditions)
     
+    print(f"Using scaling term: {scaling_term[lnc_unit]}")
+    
+    stoich_sums = S.sum(axis=0) # Net stoichiometric value
+    unit_correction = RT * ln_scaling_term * stoich_sums
+    
+    print(f"Using correction vector of {unit_correction}")
     #array of drG0_prime and standard error
     #drGt0tr = np.array([round((rxn.drG0prime.m + rxn.drGtransport.m),5) for rxn in tmodel.reactions])
     drGt0tr = np.array([(rxn.drG0prime.m + rxn.drGtransport.m) for rxn in tmodel.reactions])
     drG_SE = np.array([rxn.drG_SE.m for rxn in tmodel.reactions])
 
-    max_drG0 = np.max(np.abs(drGt0tr))
-    max_conc_term = RT * np.log(1e6) * np.max(np.abs(np.sum(S, axis=0))) 
-    max_drG = max_drG0 + max_conc_term + 50    
-
-    print(max_drG)
 
     # Create variables
     b = m.addMVar(shape = (nconds,Nr), vtype=GRB.BINARY, name="reaction_directions")
     v = m.addMVar(lb=-500,ub=500,shape = (nconds,Nr), name="fluxes")
     drGp = m.addMVar(lb=0,ub=max_drG,shape = (nconds,Nr), name="drG_positive")
     drGn = m.addMVar(lb=0,ub=max_drG,shape = (nconds,Nr), name="drG_negative")
-    ln_conc = m.addMVar(lb=np.log(1e-8 * conc_factor),ub=np.log(1 * conc_factor),shape = (nconds,Nc),name="ln_conc")
+    ln_conc = m.addMVar(lb=np.log(1e-8 * (scaling_term[lnc_unit])),ub=np.log(1 * (scaling_term[lnc_unit])),shape = (nconds,Nc),name="ln_conc") # Move this up or down based on conc unit
     drG = m.addMVar(lb=-max_drG, ub = max_drG,shape = (nconds,Nr),name="drG") #ToDo! update to default max drG value 
     drG_error =  m.addMVar(lb=-1e6, ub = 1e6,shape=Nr,name="drG_error")
     drG_conc =  m.addMVar(lb=-GRB.INFINITY, ub = GRB.INFINITY,shape = (nconds,Nr),name="drG_conc")
@@ -74,15 +75,8 @@ def add_TFBA_variables(tmodel, m, conds=[''], error_type='linear',
     
     #import bounds from tmodel 
     for cond_index, cond in enumerate(conds):
-
-        lb_conc = [met.lower_bound.m_as(conc_unit) for met in tmodel.metabolites]
-        ub_conc = [met.upper_bound.m_as(conc_unit) for met in tmodel.metabolites]
-
-        lb_conc = [max(1e-12, x) for x in lb_conc]
-        ub_conc = [max(lb, ub) for lb, ub in zip(lb_conc, ub_conc)]
-
-        ln_conc[cond_index,:].lb = np.log(lb_conc)
-        ln_conc[cond_index,:].ub = np.log(ub_conc)
+        ln_conc[cond_index,:].lb = [np.log(met.lower_bound.m_as(lnc_unit)) for met in tmodel.metabolites]
+        ln_conc[cond_index,:].ub = [np.log(met.upper_bound.m_as(lnc_unit)) for met in tmodel.metabolites]
         
         v[cond_index,:].lb = [rxn.lower_bound for rxn in tmodel.reactions]
         v[cond_index,:].ub = [rxn.upper_bound for rxn in tmodel.reactions]
@@ -101,7 +95,7 @@ def add_TFBA_variables(tmodel, m, conds=[''], error_type='linear',
     
         #add constriants 
         #drG concnetration term
-        m.addConstr(drG_conc[cond_index] == (S.T@ln_conc[cond_index]), name = 'drG_conc_constraint_'+str(cond))
+        m.addConstr(drG_conc[cond_index] == (S.T@(ln_conc[cond_index] + ln_scaling_term)) * RT, name = 'drG_conc_constraint_'+str(cond))
         
         #drG term 
         m.addConstr(drG[cond_index] == drGt0tr + drG_error + drG_conc[cond_index], name = 'drG_constraint_'+str(cond)) #+ epsilon 
@@ -259,7 +253,8 @@ def add_TFBA_variables(tmodel, m, conds=[''], error_type='linear',
                 #m.addConstr((g_1[cond_index]+g_2[cond_index]) >= -1e-3, name = 'GEB_n_'+str(cond)) #ensure gibbs energy balance for internal and exhcange reactions 
 
                 #concnetration term can be calulcated for just exchange metabolites
-                m.addConstr(((ln_conc[cond_index]@S[:,ex_index])@v[cond_index,ex_index])*RT == Gdiss_ex_conc[cond_index], name='Gdiss_lnc_'+str(cond))
+                m.addConstr((((ln_conc[cond_index] + ln_scaling_term) @ S[:, ex_index]) * RT) @ v[cond_index, ex_index] == Gdiss_ex_conc[cond_index],name='Gdiss_lnc_'+str(cond))
+                #m.addConstr(((ln_conc[cond_index]@S[:,ex_index])@v[cond_index,ex_index])*RT == Gdiss_ex_conc[cond_index], name='Gdiss_lnc_'+str(cond))
                 m.addConstr((g_2[cond_index]+Gdiss_ex_conc[cond_index]) <= g_diss_lim, name= 'Gdiss_lim_ex_'+str(cond))
 
                 #Gdiss limit not needed for internal reactions? should be constrained already by external... 

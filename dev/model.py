@@ -733,7 +733,7 @@ class ThermoModel(Model):
 
     def add_TFBA_variables(self, m = None, conds=[''], error_type='covariance',
                            qnorm=2, alpha=0.95, epsilon=0.5, nullspace=None,
-                           gdiss_constraint=False, sigmac_limit=12.3, split_v=False, big_M = False, conc_unit = "mM"):
+                           gdiss_constraint=False, sigmac_limit=12.3, split_v=False, big_M = False, lnc_unit = "mM"):
 
         if m is None:
             m = self.m
@@ -741,7 +741,7 @@ class ThermoModel(Model):
         m, mvars = gurobi.add_TFBA_variables(self, m=m, conds=conds, error_type=error_type,
                                              qnorm=qnorm, alpha=alpha, epsilon=epsilon, nullspace=nullspace,
                                              gdiss_constraint=gdiss_constraint, sigmac_limit=sigmac_limit,
-                                            split_v=split_v, big_M=big_M, conc_unit=conc_unit)
+                                            split_v=split_v, big_M=big_M, lnc_unit=lnc_unit)
 
         self.m = m
         self.mvars = mvars
