@@ -11,6 +11,7 @@ import seaborn as sns  # optional but nicer
 import scipy
 import requests
 from time import sleep
+from thermo_flux.solver.gurobi import variability_analysis, variability_results, compute_IIS
 
 def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1, open_exch = False):
     "Returns a list of blocked reactions. Does not remove the reactions from the model."
@@ -77,6 +78,44 @@ def refine_subsystems(df):
             df.loc[i, "RefinedSubsystem"] = "Error"
 
         sleep(0.2)
+
+def tfva_write_scenarios(tmodel, condition, output_folder, OUTPUT_LOG, lnc_unit="M", num_reactions=-1, REMOVE_BLOCKED=True):
+    "Writes TFVA scenario files to the specified output folder, 1 file for each reaction"
+    blocked_p = list_blocked_reactions(tmodel, condition, OUTPUT_LOG, 1, False)
+    print(len(blocked_p))
+
+    if REMOVE_BLOCKED:
+        tmodel.remove_reactions(blocked_p, remove_orphans=True)
+        for rxn in tmodel.reactions:
+            thermo_flux.tools.drg_tools.reaction_balance(rxn, balance_charge=True, balance_mg=False)
+        tmodel.update_thermo_info(fit_unknown_dfG0=True)
+    else:
+        for rxn in blocked_p:
+            tmodel.reactions.get_by_id(rxn).lower_bound = 0
+            tmodel.reactions.get_by_id(rxn).upper_bound = 0
+
+    tmodel.m = None  
+    tmodel.objective = tmodel.reactions.biomass_EX  
+    tmodel.add_TFBA_variables(lnc_unit=lnc_unit)
+
+    tmodel.m.Params.TimeLimit = 20
+    tmodel.m.optimize()
+
+    folder = "Blocked_Removed" if REMOVE_BLOCKED else "Blocked_Restricted"
+    suffix = "B_REMOVED" if REMOVE_BLOCKED else "B_RESTRICTED"
+    
+    rxn_ids = [r.id for r in tmodel.reactions]
+    max_rxns = len(rxn_ids) if num_reactions < 0 else num_reactions
+    rxn_ids = rxn_ids[:max_rxns]
+
+    for rxn_id in rxn_ids:
+        rxn = tmodel.reactions.get_by_id(rxn_id)
+        idx = tmodel.reactions.index(rxn)
+
+        v_var = [tmodel.mvars["v"][0][idx]]
+        gm = variability_analysis(tmodel, v_var)
+        gm.write(f"{output_folder}{path.sep}{condition}_{lnc_unit}_{rxn_id}_{idx}_{suffix}_tfva.mps.gz")
+
 
 def tfva_update_bounds(tmodel, condition, tfva_results_dir):
     print("wip")
