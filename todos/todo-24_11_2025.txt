@@ -1,0 +1,24 @@
+- Readme
+    - Reasoning for pipeline design choices
+    - Make sure to write down thoughts on the steps and where to find it in notebook
+        - e.g. we removed blocked reactions instead of setting them to 0,0
+            - because time constraints
+    - Do this for major steps
+    
+Benchmark concentration
+    - Compare results
+        - ~ 5 reactions
+    - Compare 3 reactions for time
+- Benchmark subset of model
+    - 20 - 50 reactions
+    - Check results for e.g. 0, 0
+    - Make notebook to analyze reaction results
+        - How many are blocked
+        - Compare flux ranges vs FBA
+
+- Look into biomass transport energy
+    - tmodel.reactions.biomass_ce
+- rug.smartcat -> check signal
+    - Summary paper for Battley 1991
+
+- PTA with Thermo-Flux cobra model

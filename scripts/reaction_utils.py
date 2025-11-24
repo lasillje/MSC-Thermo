@@ -1,3 +1,4 @@
+from pathlib import Path
 import os.path as path
 from cobra.flux_analysis import find_blocked_reactions
 import cobra
@@ -10,6 +11,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns  # optional but nicer
 import scipy
 import requests
+import ast
 from time import sleep
 from thermo_flux.solver.gurobi import variability_analysis, variability_results, compute_IIS
 
@@ -118,7 +120,74 @@ def tfva_write_scenarios(tmodel, condition, output_folder, OUTPUT_LOG, lnc_unit=
 
 
 def tfva_update_bounds(tmodel, condition, tfva_results_dir):
-    print("wip")
+
+    updated_rxns = set()
+
+    directory = Path(tfva_results_dir)
+    if not directory.exists():
+        raise FileNotFoundError(f"Directory not found: {directory}")
+
+    updated = 0
+    skipped = 0
+    not_found = 0
+
+    for filepath in directory.glob("*.txt"):
+        filename = filepath.name
+
+        if condition and condition not in filename:
+            continue
+
+        parts = filename.split("_")
+        if len(parts) < 5:
+            print(f"Skipping incorrect filename: {filename}")
+            skipped += 1
+            continue
+
+        rxn_id = parts[2]
+
+        try:
+            content = filepath.read_text().strip()
+            # Remove unused prefix
+            if ":" in content:
+                bounds_str = content.split(":", 1)[1]
+            else:
+                bounds_str = content
+
+            bounds = ast.literal_eval(bounds_str.strip())
+            if not (isinstance(bounds, (list, tuple)) and len(bounds) == 2):
+                raise ValueError("Not a [lb, ub] pair")
+            lb, ub = float(bounds[0]), float(bounds[1])
+
+        except Exception as e:
+            print(f"Failed to parse bounds in {filename}: {e}")
+            skipped += 1
+            continue
+
+        # Apply to model
+        if rxn_id not in tmodel.reactions:
+            print(f"Reaction not in model: {rxn_id} ({filename})")
+            not_found += 1
+            continue
+
+        rxn = tmodel.reactions.get_by_id(rxn_id)
+        old_lb, old_ub = rxn.lower_bound, rxn.upper_bound
+        rxn.lower_bound = lb
+        rxn.upper_bound = ub
+
+        print(f"{rxn_id}: [{old_lb: .6f}, {old_ub: .6f}] -> [{lb: .6f}, {ub: .6f}]")
+        updated += 1
+        updated_rxns.add(rxn_id)
+
+    print(f"\n=== TFVA Bounds Update Summary ===")
+    print(f"Updated: {updated} reactions")
+    print(f"Skipped/Malformed: {skipped}")
+    print(f"Reaction not found in model: {not_found}")
+    print(f"Total files processed: {updated + skipped + not_found}")
+    print(f"Reactions in model which were not found in results: \n")
+    missing_rxns = [x for x in tmodel.reactions if x not in updated_rxns]
+    print(missing_rxns)
+
+    return updated
 
 def count_blocked_pathways(reactions, name, condition, model_xlsx: str):
     "Counts and plots blocked pathways from a given list of blocked reactions and model xlsx file "
