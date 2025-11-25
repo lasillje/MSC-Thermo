@@ -14,6 +14,19 @@ import requests
 import ast
 from time import sleep
 from thermo_flux.solver.gurobi import variability_analysis, variability_results, compute_IIS
+import enkie
+import pta
+from typing import Any, Dict, Tuple, Union
+from enkie.distributions import (
+    LogNormalDistribution,
+    LogUniformDistribution,
+    distribution_from_string,
+    distribution_to_string,
+)
+from enkie import CompartmentParameters
+from pta import ConcentrationsPrior
+import equilibrator_api
+Q = equilibrator_api.Q_
 
 def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1, open_exch = False):
     "Returns a list of blocked reactions. Does not remove the reactions from the model."
@@ -188,6 +201,86 @@ def tfva_update_bounds(tmodel, condition, tfva_results_dir):
     print(missing_rxns)
 
     return updated
+
+def pta_get_parameters(tmodel, temp_k = 310.5):
+        
+    compartments = ["e", "c"]
+
+    # Enkie does use a periplasm ('p') compartment which is missing in our model
+    # Periplasm values will use the 'e' compartment's values with the same difference applied as the base enkie 'p' compartment
+    # Default Enkie temp is 310.5 K
+    # pH[p] = pH[e] + 0.01
+    # pMg[p] = pMg[e]
+    # I[p] = I[e]
+    # phi[p] = phi[e] - 0.001
+    # Also, we only have the difference of membrane potential (Phic - Phie), while Enkie requires both seperately
+    # For now, phi[e] = 0, and phi[c] = tmodel.phi['ce'] * -1
+    # To keep consistent with Enkie
+    # https://gitlab.com/csb.ethz/enkie/-/blob/main/enkie/data/compartment_parameters/e_coli.csv?ref_type=heads
+    
+    phi_values = {"e": 0, "c": tmodel.phi['ce'].magnitude * -1}
+
+    compartment_pH: Dict[str, Q] = {}
+    compartment_pMg: Dict[str, Q] = {}
+    compartment_I: Dict[str, Q] = {}
+    compartment_phi: Dict[str, Q] = {}
+    T = Q(temp_k, "K")
+
+    for c in compartments:
+        compartment_pH[c] = tmodel.pH[c]
+        compartment_pMg[c] = tmodel.pMg[c]
+        compartment_I[c] = tmodel.I[c]
+        compartment_phi[c] = Q(phi_values[c], "V")
+        
+    compartment_pH['p'] = compartment_pH['e'] + Q(0.01)
+    compartment_pMg['p'] = compartment_pMg['e']
+    compartment_I['p'] = compartment_I['e']
+    compartment_phi['p'] = compartment_phi['e'] - Q(0.001, "V")
+
+    return CompartmentParameters(
+        compartment_pH, compartment_pMg, compartment_I, compartment_phi, T
+    )
+
+def pta_get_concentrations(tmodel, skip_defaults = True):
+    # ThermoModel metabolite concentrations are defined in linear space
+    # PTA requires them to be in ln space, so they will be converted to that
+    # Default data: https://gitlab.com/csb.ethz/pta/-/blob/main/pta/data/concentration_priors/M9_aerobic.csv?ref_type=heads
+
+    # Taken from pta concentrations_prior.py
+    default_log_conc = LogNormalDistribution(-8.3371, 1.9885)
+
+    met_distributions = {}
+    compartment_distributions = {}
+    default_distribution: Any = default_log_conc
+
+    for met in tmodel.metabolites:
+
+        if skip_defaults:
+            if met.lower_bound <= -100 and met.upper_bound >= 100:
+                continue
+
+        met_id_split = met.id.split("_")
+        met_compartment = None
+
+        if(met_id_split):
+            for s in met_compartment:
+                if s == "c" or s == "e":
+                    met_compartment = s
+
+        if met_compartment == None:
+            continue
+
+
+        dist_string = f"LogNormal|{np.log(met.lower_bound)}|{np.log(met.upper_bound)}"
+        distribution = distribution_from_string(dist_string)
+        met_distributions[(met.id, met_compartment)] = distribution
+
+    return ConcentrationsPrior(
+        met_distributions,
+        compartment_distributions,
+        default_distribution
+    )
+
 
 def count_blocked_pathways(reactions, name, condition, model_xlsx: str):
     "Counts and plots blocked pathways from a given list of blocked reactions and model xlsx file "

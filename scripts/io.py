@@ -92,6 +92,10 @@ def load_tmodel_cobra(input_path):
         rxn.gene_reaction_rule = rxn_data["gene_reaction_rule"]
         rxn.subsystem = rxn_data["subsystem"]
 
+        if rxn.lower_bound > rxn.upper_bound:
+            print(f"Inconsistency fixed in {rxn.id}: LB ({rxn.lower_bound}) > UB ({rxn.upper_bound}). Clamping LB to UB.")
+            rxn.lower_bound = rxn.upper_bound
+
         stoichiometry = {}
         for met_id, coeff in rxn_data["metabolites"].items():
             stoichiometry[metabolite_objects[met_id]] = coeff
