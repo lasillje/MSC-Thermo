@@ -28,6 +28,8 @@ from pta import ConcentrationsPrior
 import equilibrator_api
 Q = equilibrator_api.Q_
 
+from scripts.metabolite_utils import metabolite_to_bigg
+
 def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1, open_exch = False):
     "Returns a list of blocked reactions. Does not remove the reactions from the model."
 
@@ -241,7 +243,7 @@ def pta_get_parameters(tmodel, temp_k = 310.5):
         compartment_pH, compartment_pMg, compartment_I, compartment_phi, T
     )
 
-def pta_get_concentrations(tmodel, skip_defaults = True):
+def pta_get_concentrations(tmodel, metabolite_namespace = None, strip_compartments = True, skip_defaults = True):
     # ThermoModel metabolite concentrations are defined in linear space
     # PTA requires them to be in ln space, so they will be converted to that
     # Default data: https://gitlab.com/csb.ethz/pta/-/blob/main/pta/data/concentration_priors/M9_aerobic.csv?ref_type=heads
@@ -254,26 +256,30 @@ def pta_get_concentrations(tmodel, skip_defaults = True):
     default_distribution: Any = default_log_conc
 
     for met in tmodel.metabolites:
-
+        lb = met.lower_bound.magnitude
+        ub = met.upper_bound.magnitude
         if skip_defaults:
-            if met.lower_bound <= -100 and met.upper_bound >= 100:
+            if lb <= -100 and ub >= 100:
                 continue
 
         met_id_split = met.id.split("_")
         met_compartment = None
 
         if(met_id_split):
-            for s in met_compartment:
+            for s in met_id_split:
                 if s == "c" or s == "e":
                     met_compartment = s
 
         if met_compartment == None:
             continue
 
-
-        dist_string = f"LogNormal|{np.log(met.lower_bound)}|{np.log(met.upper_bound)}"
+        dist_string = f"LogNormal|{np.log(lb)}|{np.log(ub)}"
         distribution = distribution_from_string(dist_string)
-        met_distributions[(met.id, met_compartment)] = distribution
+        
+        met_id_cleaned = metabolite_to_bigg(met.id)
+
+        met_name = met_id_cleaned if metabolite_namespace is None else f"{metabolite_namespace}:{met_id_cleaned}"
+        met_distributions[(met_name, met_compartment)] = distribution
 
     return ConcentrationsPrior(
         met_distributions,
@@ -281,6 +287,40 @@ def pta_get_concentrations(tmodel, skip_defaults = True):
         default_distribution
     )
 
+def fix_negative_upper_bounds(model, tolerance: float = 1e-9):
+    """
+    Identifies boundary reactions that have a small, non-zero negative upper bound,
+    which can cause a ValueError when internal PTA functions attempt to set 
+    reaction.lower_bound = 0 before setting reaction.upper_bound = 0.
+    
+    If reaction.upper_bound is < 0, it means the reaction is forced to only
+    operate in the reverse direction. To allow the boundary blocking step (v=0),
+    we temporarily set the upper bound to 0
+    """
+    modified_count = 0
+    print("\nStarting check for boundary reactions with negative upper bounds...")
+    
+    # A set of reactions where the original UB < 0
+    reactions_to_fix = []
+    
+    for reaction in model.boundary:
+
+        if reaction.upper_bound < -tolerance:
+            reactions_to_fix.append(reaction)
+            print(f"  - Found boundary reaction '{reaction.id}' with UB: {reaction.upper_bound:.4f}. Fixing...")
+            
+    for reaction in reactions_to_fix:
+        # Reaction upper bounds are set to 0.0 to fix the mistake in PTA of setting the lower bound to 0 first, which causes a ValueError
+        reaction.upper_bound = 0.0 
+        modified_count += 1
+    
+    if modified_count == 0:
+        print("No boundary reactions required fixing.")
+    else:
+        print(f"Completed boundary fix. Total reactions temporarily modified: {modified_count}")
+        print("Note: The model's original bounds are restored after the block.")
+        
+    return reactions_to_fix
 
 def count_blocked_pathways(reactions, name, condition, model_xlsx: str):
     "Counts and plots blocked pathways from a given list of blocked reactions and model xlsx file "

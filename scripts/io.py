@@ -3,6 +3,7 @@ import json
 import numpy as np
 from io import StringIO
 from cobra import Model, Reaction, Metabolite
+from scripts.metabolite_utils import metabolite_to_bigg
 
 def _sanitize_value(value, replacement=0.0):
     if isinstance(value, float) and (np.isnan(value) or np.isinf(value)):
@@ -35,7 +36,9 @@ def export_tmodel_cobra(tmodel, output_path):
         data["metabolites"].append(met_data)
 
 
-    met_map = {met.id: met for met in tmodel.metabolites}
+    #met_map = {met.id: met for met in tmodel.metabolites}
+
+    print(data["metabolites"])
 
     for rxn in tmodel.reactions:
         lb_clean = _sanitize_value(rxn.lower_bound, replacement=-1000.0)
@@ -43,7 +46,7 @@ def export_tmodel_cobra(tmodel, output_path):
         
         stoichiometry = {}
         for met_id, coeff in rxn.metabolites.items():
-             stoichiometry[met_id.id] = _sanitize_value(coeff, replacement=0.0)
+            stoichiometry[met_id.id] = _sanitize_value(coeff, replacement=0.0)
 
         rxn_data = {
             "id": rxn.id,
@@ -63,7 +66,7 @@ def export_tmodel_cobra(tmodel, output_path):
     return output_path
 
 
-def load_tmodel_cobra(input_path):
+def load_tmodel_cobra(input_path, strip_compartment = True, metabolite_namespace = None):
     """
     Loads JSON file to create a cobra model
     """
@@ -104,6 +107,13 @@ def load_tmodel_cobra(input_path):
         reaction_objects.append(rxn)
 
     new_model.add_reactions(reaction_objects)
+
+    if metabolite_namespace is not None:
+        for met in new_model.metabolites:
+            met_name = met.id
+            if strip_compartment:
+                met_name = metabolite_to_bigg(met_name)
+            met.annotation[metabolite_namespace] = met_name
 
     print(f"Successfully loaded clean COBRA model: {new_model.id}")
     return new_model
