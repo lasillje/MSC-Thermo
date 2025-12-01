@@ -1,0 +1,31 @@
+Flux coupling analysis
+    - Cut down number of reactions
+
+PTA from_cobra_model
+    - Use thermoflux drG0, (dfG0 not needed)
+    - Copy class into seperate module
+        - Make adjustments
+
+Plot log values for confirmation
+    Look at actual bounds
+    For metabolome data
+        Enlarge bounds
+
+Use default concentrations from thermo-flux
+    For bounds that are not default
+        - Set log normal distribution
+        - Set frac of area
+        - For the ones we have data:
+            - 60, 70%
+    Metabolites that dont have concentration data
+
+Talk to Arnoud monday
+
+From previous (after checking flux coupling):
+    TVFA
+    - Normal FBA
+    - Run 100 reactions
+        - 6 hours max
+        - 4 CPUs, 1GB
+    - Check TFVA on concentrations
+        - If faster, use to constrain TFVA on reactions

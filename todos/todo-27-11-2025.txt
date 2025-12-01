@@ -1,0 +1,28 @@
+TVFA
+    - Normal FBA
+    - Run 100 reactions
+        - 6 hours max
+        - 4 CPUs, 1GB
+    - Check TFVA on concentrations
+        - If faster, use to constrain TFVA on reactions
+    
+Biomass reaction
+    - Investigate internals
+
+PTA
+    - Retrieve annotations from thermoflux
+        - get_suitable_ids()
+    - Metabolome concentrations
+        - Linear normal (mean,std) to 
+    - For other concentrations with lb, ubs:
+        - Make a log normal distribution
+        - Based on lb, ubs
+            - Say how big of area these bounds should be of the gaussian
+        - OR:
+            - Convert to log, then make normal
+    - Thermo-flux model
+        - Check temp, excel file
+        - Set PTA temp to this value
+        - Remove fake P compartment
+    - Set CO2TOT to hco3
+    - Set bounds to FVA
