@@ -1,0 +1,7 @@
+PTA / TFS
+    - Std is square root of covariance
+    - Metabolite concentrations 
+        thermoflux ignore concs
+        run TFVA on concentrations
+            Use results
+            Instead of fluxes use concentrations for solver.gurobi etc.

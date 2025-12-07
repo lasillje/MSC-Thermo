@@ -20,7 +20,7 @@ from cobra.flux_analysis import flux_variability_analysis
 
 CONDITIONS_REGRESS = ["WT-Glc_I", "WT-Gal_I", "WT-Fruc_I", "WT-Mann_I", "dptsG-Glc_I", "WT-Ace_I", "WT-Succ_I", "WT-Fum_I", "WT-Glyc_I", "WT-Pyr_I", "WT-GlyCAA_II"];
 
-def gen_model(name: str, model_xlsx: str, kegg: str, reed: str, inchi:str, gams: str, output_log: str, add_o2: bool, add_co2: bool):
+def gen_model(name: str, model_xlsx: str, kegg: str, reed: str, inchi:str, gams: str, output_log: str, add_o2: bool, add_co2: bool, update_thermodynamics=True):
     "Generates a base Thermo-Flux model given the input files"
     tmodel = ex.create_thermo_model(name, model_excel=model_xlsx, keggids_csv=kegg, edit_mets={})
     write_to_log(output_log, f"Loaded model {name} from {model_xlsx}")
@@ -322,17 +322,18 @@ def gen_model(name: str, model_xlsx: str, kegg: str, reed: str, inchi:str, gams:
     tmodel.reactions.biomass_ce.ignore_snd = True
     write_to_log(output_log, f"Ignored 2nd law for biomass_ce transport reaction")
 
-    write_to_log(output_log, f"Performing charge balance")
-    for rxn in tmodel.reactions:
-        thermo_flux.tools.drg_tools.reaction_balance(rxn, balance_charge=True, balance_mg=False)
+    if update_thermodynamics:
+        write_to_log(output_log, f"Performing charge balance")
+        for rxn in tmodel.reactions:
+            thermo_flux.tools.drg_tools.reaction_balance(rxn, balance_charge=True, balance_mg=False)
 
-    for met in tmodel.metabolites:
-        if met.id in ['charge_c', 'charge_m', 'charge_e']:
-            met.ignore_conc = True
+        for met in tmodel.metabolites:
+            if met.id in ['charge_c', 'charge_m', 'charge_e']:
+                met.ignore_conc = True
 
-    # Update thermodynamic information:
-    write_to_log(output_log, f"Updating thermodynamic information")
-    tmodel.update_thermo_info(fit_unknown_dfG0=True)
+        # Update thermodynamic information:
+        write_to_log(output_log, f"Updating thermodynamic information")
+        tmodel.update_thermo_info(fit_unknown_dfG0=True)
 
     return tmodel
 
@@ -543,7 +544,34 @@ def constrain_bounds_fva(tmodel, output_log: str):
 
         r.lower_bound, r.upper_bound = lower_bound, upper_bound
 
-    return tmodel
+def run_fva(tmodel, output_log: str):
+    "Tighten bounds of a ThermoModel's reactions"
+    bounds = []
+    all_reactions = [r.id for r in tmodel.reactions]
+    fva = flux_variability_analysis(tmodel, reaction_list=all_reactions, fraction_of_optimum=1.0, processes=1)
+
+    for r_id, row in fva.iterrows():
+        if r_id not in tmodel.reactions:
+            write_to_log(output_log, f"{r_id} is not a valid reaction. Skipping.")
+            continue
+        r = tmodel.reactions.get_by_id(r_id)
+        fmin, fmax = float(row["minimum"]), float(row["maximum"])
+
+        write_to_log(output_log, f"FVA: {r.id} bounds are {fmin}, {fmax}. Experimental bounds are {r.lower_bound}, {r.upper_bound} ")
+
+        lower_bound = max(r.lower_bound, fmin)
+        upper_bound = min(r.upper_bound, fmax)
+
+        if lower_bound > upper_bound:
+            lower_bound = fmin
+            upper_bound = fmax
+            write_to_log(output_log, f"Lower bound higher than upper ({lower_bound}, {upper_bound}). Falling back to {fmin}, {fmax}")
+        
+        write_to_log(output_log, f"{r.id} new bounds are {lower_bound}, {upper_bound}")
+
+        #r.lower_bound, r.upper_bound = lower_bound, upper_bound
+        bounds.append((lower_bound, upper_bound))
+    return bounds
 
 def run_optimization(tmodel, name: str, condition :str, input_exp: str, input_conc: str, input_metabolomics: str, input_gams: str, output_log: str, include_CO2: bool, include_O2: bool, allow_other_excr: bool):
 

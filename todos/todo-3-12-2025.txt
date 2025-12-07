@@ -1,0 +1,13 @@
+Flux coupling
+    Write own code
+        Boundary reactions
+    Go deeper into how they do it for more complex situations
+        Directionally coupled (v1 -> v2, v2 -> v1)
+        Partially coupled (v1 <-> v2)
+        Fully coupled (v1 == v2)
+        Uncoupled (v1 =/= v2)
+
+PTA
+    Save Gurobi model (gurobi.env)
+    Load in and then run IIS
+

@@ -12539,32 +12539,11 @@
             "formula": "H1"
         },
         {
-            "id": "acgam_c",
-            "name": "acgam_c",
-            "compartment": "c",
-            "charge": 0,
-            "formula": "H15"
-        },
-        {
             "id": "charge_c",
             "name": "charge_c",
             "compartment": "c",
             "charge": 0.0,
             "formula": "Hnan"
-        },
-        {
-            "id": "galt_c",
-            "name": "galt_c",
-            "compartment": "c",
-            "charge": 0,
-            "formula": "H14"
-        },
-        {
-            "id": "gam_c",
-            "name": "gam_c",
-            "compartment": "c",
-            "charge": 1,
-            "formula": "H14"
         },
         {
             "id": "na1_c",
@@ -12588,39 +12567,11 @@
             "formula": "H0"
         },
         {
-            "id": "man_c",
-            "name": "man_c",
-            "compartment": "c",
-            "charge": 0,
-            "formula": "H12"
-        },
-        {
-            "id": "mnl_c",
-            "name": "mnl_c",
-            "compartment": "c",
-            "charge": 0,
-            "formula": "H14"
-        },
-        {
             "id": "no3_c",
             "name": "no3_c",
             "compartment": "c",
             "charge": -1,
             "formula": "H0"
-        },
-        {
-            "id": "sbt-D_c",
-            "name": "sbt-D_c",
-            "compartment": "c",
-            "charge": 0,
-            "formula": "H14"
-        },
-        {
-            "id": "sucr_c",
-            "name": "sucr_c",
-            "compartment": "c",
-            "charge": 0,
-            "formula": "H22"
         },
         {
             "id": "biomass_c",
@@ -12642,20 +12593,6 @@
             "compartment": "e",
             "charge": -1,
             "formula": "H3"
-        },
-        {
-            "id": "Mg_c",
-            "name": "Mg",
-            "compartment": "c",
-            "charge": 2,
-            "formula": "Mg"
-        },
-        {
-            "id": "Mg_e",
-            "name": "Mg",
-            "compartment": "e",
-            "charge": 2,
-            "formula": "Mg"
         }
     ],
     "genes": [],

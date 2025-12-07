@@ -29,6 +29,8 @@ import equilibrator_api
 Q = equilibrator_api.Q_
 
 from scripts.metabolite_utils import metabolite_to_bigg
+from scipy.stats import norm
+from scripts.gen_model import constrain_bounds_fva
 
 def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1, open_exch = False):
     "Returns a list of blocked reactions. Does not remove the reactions from the model."
@@ -96,13 +98,26 @@ def refine_subsystems(df):
 
         sleep(0.2)
 
-def tfva_write_scenarios(tmodel, condition, output_folder, OUTPUT_LOG, lnc_unit="M", num_reactions=-1, REMOVE_BLOCKED=True):
+def tfva_write_scenarios(tmodel, condition, output_folder, OUTPUT_LOG, lnc_unit="M", num_reactions=-1, REMOVE_BLOCKED=True, APPLY_FVA=True):
     "Writes TFVA scenario files to the specified output folder, 1 file for each reaction"
     blocked_p = list_blocked_reactions(tmodel, condition, OUTPUT_LOG, 1, False)
     print(len(blocked_p))
 
     if REMOVE_BLOCKED:
         tmodel.remove_reactions(blocked_p, remove_orphans=True)
+
+        if APPLY_FVA:
+
+            print("Bounds before FVA: ")
+            for x in tmodel.reactions:
+                print(f"{x.lower_bound}, {x.upper_bound}")
+
+            constrain_bounds_fva(tmodel, OUTPUT_LOG)
+
+            print("Bounds after FVA: ")
+            for x in tmodel.reactions:
+                print(f"{x.lower_bound}, {x.upper_bound}")
+
         for rxn in tmodel.reactions:
             thermo_flux.tools.drg_tools.reaction_balance(rxn, balance_charge=True, balance_mg=False)
         tmodel.update_thermo_info(fit_unknown_dfG0=True)
@@ -119,8 +134,9 @@ def tfva_write_scenarios(tmodel, condition, output_folder, OUTPUT_LOG, lnc_unit=
     tmodel.m.optimize()
 
     folder = "Blocked_Removed" if REMOVE_BLOCKED else "Blocked_Restricted"
-    suffix = "B_REMOVED" if REMOVE_BLOCKED else "B_RESTRICTED"
-    
+    suffix = "REMOVED" if REMOVE_BLOCKED else "RESTRICTED"
+    suffix_fva = "FVA" if APPLY_FVA else ""
+
     rxn_ids = [r.id for r in tmodel.reactions]
     max_rxns = len(rxn_ids) if num_reactions < 0 else num_reactions
     rxn_ids = rxn_ids[:max_rxns]
@@ -131,7 +147,7 @@ def tfva_write_scenarios(tmodel, condition, output_folder, OUTPUT_LOG, lnc_unit=
 
         v_var = [tmodel.mvars["v"][0][idx]]
         gm = variability_analysis(tmodel, v_var)
-        gm.write(f"{output_folder}{path.sep}{condition}_{lnc_unit}_{rxn_id}_{idx}_{suffix}_tfva.mps.gz")
+        gm.write(f"{output_folder}{path.sep}{condition}_{lnc_unit}_{rxn_id}_{idx}_{suffix}_{suffix_fva}_tfva.mps.gz")
 
 
 def tfva_update_bounds(tmodel, condition, tfva_results_dir):
@@ -204,8 +220,10 @@ def tfva_update_bounds(tmodel, condition, tfva_results_dir):
 
     return updated
 
-def pta_get_parameters(tmodel, temp_k = 310.5):
-        
+def pta_get_parameters(tmodel, add_fake_p = False, temp_k = 310.15):
+    
+    # Our E. coli model has a temp of 310.15 (from model.xlsx)
+
     compartments = ["e", "c"]
 
     # Enkie does use a periplasm ('p') compartment which is missing in our model
@@ -233,59 +251,59 @@ def pta_get_parameters(tmodel, temp_k = 310.5):
         compartment_pMg[c] = tmodel.pMg[c]
         compartment_I[c] = tmodel.I[c]
         compartment_phi[c] = Q(phi_values[c], "V")
-        
-    compartment_pH['p'] = compartment_pH['e'] + Q(0.01)
-    compartment_pMg['p'] = compartment_pMg['e']
-    compartment_I['p'] = compartment_I['e']
-    compartment_phi['p'] = compartment_phi['e'] - Q(0.001, "V")
+    
+    if(add_fake_p):
+        compartment_pH['p'] = compartment_pH['e'] + Q(0.01)
+        compartment_pMg['p'] = compartment_pMg['e']
+        compartment_I['p'] = compartment_I['e']
+        compartment_phi['p'] = compartment_phi['e'] - Q(0.001, "V")
 
     return CompartmentParameters(
         compartment_pH, compartment_pMg, compartment_I, compartment_phi, T
     )
 
-def pta_get_concentrations(tmodel, metabolite_namespace = None, strip_compartments = True, skip_defaults = True):
-    # ThermoModel metabolite concentrations are defined in linear space
-    # PTA requires them to be in ln space, so they will be converted to that
-    # Default data: https://gitlab.com/csb.ethz/pta/-/blob/main/pta/data/concentration_priors/M9_aerobic.csv?ref_type=heads
+# def pta_get_concentrations(tmodel, metabolite_namespace = None,):
+#     # ThermoModel metabolite concentrations are defined in linear space
+#     # PTA requires them to be in ln space, so they will be converted to that
+#     # Default data: https://gitlab.com/csb.ethz/pta/-/blob/main/pta/data/concentration_priors/M9_aerobic.csv?ref_type=heads
 
-    # Taken from pta concentrations_prior.py
-    default_log_conc = LogNormalDistribution(-8.3371, 1.9885)
+#     # Taken from pta concentrations_prior.py
+#     default_log_conc = LogNormalDistribution(-8.3371, 1.9885)
+#     #default_log_conc = LogNormalDistribution(-6.3371, 6.9885)
 
-    met_distributions = {}
-    compartment_distributions = {}
-    default_distribution: Any = default_log_conc
+#     met_distributions = {}
+#     default_distribution: Any = default_log_conc
 
-    for met in tmodel.metabolites:
-        lb = met.lower_bound.magnitude
-        ub = met.upper_bound.magnitude
-        if skip_defaults:
-            if lb <= -100 and ub >= 100:
-                continue
+#     # Create log normal distributions for every met
+#     for met in tmodel.metabolites:
+#         lb = met.lower_bound.magnitude
+#         ub = met.upper_bound.magnitude
 
-        met_id_split = met.id.split("_")
-        met_compartment = None
+#         if(lb < ub or (lb == 0 and ub == 0)):
+#             continue
 
-        if(met_id_split):
-            for s in met_id_split:
-                if s == "c" or s == "e":
-                    met_compartment = s
+#         met_id_split = met.id.split("_")
+#         met_compartment = None
 
-        if met_compartment == None:
-            continue
+#         if(met_id_split):
+#             for s in met_id_split:
+#                 if s == "c" or s == "e":
+#                     met_compartment = s
 
-        dist_string = f"LogNormal|{np.log(lb)}|{np.log(ub)}"
-        distribution = distribution_from_string(dist_string)
+#         if met_compartment == None:
+#             continue
         
-        met_id_cleaned = metabolite_to_bigg(met.id)
+#         log_dist = conc_to_logdist(lb, ub)
+        
+#         met_id_cleaned = metabolite_to_bigg(met.id)
 
-        met_name = met_id_cleaned if metabolite_namespace is None else f"{metabolite_namespace}:{met_id_cleaned}"
-        met_distributions[(met_name, met_compartment)] = distribution
+#         met_name = met_id_cleaned if metabolite_namespace is None else f"{metabolite_namespace}:{met_id_cleaned}"
+#         met_distributions[(met_name, met_compartment)] = log_dist
 
-    return ConcentrationsPrior(
-        met_distributions,
-        compartment_distributions,
-        default_distribution
-    )
+#     return ConcentrationsPrior(
+#         metabolite_distributions = met_distributions,
+#         default_distribution = default_distribution
+#     )
 
 def fix_negative_upper_bounds(model, tolerance: float = 1e-9):
     """
@@ -296,6 +314,8 @@ def fix_negative_upper_bounds(model, tolerance: float = 1e-9):
     If reaction.upper_bound is < 0, it means the reaction is forced to only
     operate in the reverse direction. To allow the boundary blocking step (v=0),
     we temporarily set the upper bound to 0
+
+    An oversight in the PTA package causes it to error out when UB < 0, so this fix is necessary for now..
     """
     modified_count = 0
     print("\nStarting check for boundary reactions with negative upper bounds...")
@@ -307,7 +327,7 @@ def fix_negative_upper_bounds(model, tolerance: float = 1e-9):
 
         if reaction.upper_bound < -tolerance:
             reactions_to_fix.append(reaction)
-            print(f"  - Found boundary reaction '{reaction.id}' with UB: {reaction.upper_bound:.4f}. Fixing...")
+            print(f"Found boundary reaction '{reaction.id}' with UB: {reaction.upper_bound:.4f}. Fixing...")
             
     for reaction in reactions_to_fix:
         # Reaction upper bounds are set to 0.0 to fix the mistake in PTA of setting the lower bound to 0 first, which causes a ValueError
@@ -318,7 +338,6 @@ def fix_negative_upper_bounds(model, tolerance: float = 1e-9):
         print("No boundary reactions required fixing.")
     else:
         print(f"Completed boundary fix. Total reactions temporarily modified: {modified_count}")
-        print("Note: The model's original bounds are restored after the block.")
         
     return reactions_to_fix
 
