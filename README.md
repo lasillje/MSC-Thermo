@@ -30,12 +30,26 @@ For each growth condition, thermodynamic FVA (TFVA) was done to constrain flux s
 
 For thermodynamic smapling, the PTA package is used (https://gitlab.com/csb.ethz/pta). Installation on Windows is not possible, so on Windows I used WSL. Then, manually build the PTA package from the source.
 With this, issues may still arise. The exact steps I followed to get it to work:
-First, install the gurobi python interface with 
+First, if not on the cluster then install the gurobi python interface with 
 ```bash
 conda install -c gurobi gurobi
 ```
+
+Otherwise, on the cluster you can use
+```bash
+ml Gurobi
+ml Ninja
+```
+
 Then, download the gurobi c/c++ files from the gurobi website (linux version, .tar.gz) and unzip it
+
 Then, clone the PTA repository and set the CMAKE minimum version in pta/cpp/python/CMakeLists.txt to 3.5
+
+Make sure to also update and load all submodules while in the pta/ directory
+```bash
+git submodule update --init --recursive
+```
+
 Next, make sure to run
  ```bash
 conda install wheel setuptools
