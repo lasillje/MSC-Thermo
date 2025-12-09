@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pta
 from pta import ConcentrationsPrior
+import ast
+from equilibrator_api import Q_
 
 def metabolite_to_bigg(met_id):
     """
@@ -86,6 +88,48 @@ def remove_orphan_metabolites(model: Model):
         print("\nNo orphan metabolites found. ")
         
     return len(orphan_metabolites)
+
+def apply_met_tva(tmodel, met_tva_file):
+    bounds_dict = dict()
+    with open(met_tva_file, "r") as f:
+        for line in f:
+            clean_line = line.strip()
+            if not clean_line:
+                print(f"Skipping line {clean_line}")
+                continue
+            try:
+                index_str, bounds_str = clean_line.split(':', 1)
+                index = int(index_str.strip())
+
+                cleaned_bounds_str = bounds_str.strip().strip('[] ')
+                lower_str, upper_str = cleaned_bounds_str.split(',')
+
+                lower = float(lower_str.strip())
+                upper = float(upper_str.strip())
+
+                linear_lower = np.exp(lower) * 1e3 # From molar conc back to millimolar
+                linear_upper = np.exp(upper) * 1e3 # Same
+                
+                bounds_dict[index] = [linear_lower, linear_upper]
+            except ValueError as e:
+                print(f"Skipping line due to parsing error: '{line.strip()}' - Error: {e}")
+            except Exception as e:
+                print(f"An unexpected error occurred while processing line: '{line.strip()}' - Error: {e}") 
+    
+    for met in tmodel.metabolites:
+        met_index = tmodel.metabolites.index(met)
+
+        if met_index not in bounds_dict:
+            print(f"Skipped metabolite {met.id} as it was not found in TVA data.")
+            continue
+
+        cur_lower, cur_upper = met.lower_bound, met.upper_bound
+        new_lower, new_upper = bounds_dict[met_index][0], bounds_dict[met_index][1]
+
+        print(f"Metabolite {met.id} - Old: {cur_lower}, {cur_upper} | New: {new_lower, new_upper}")
+    
+        met.upper_bound = Q_(new_upper, "millimolar")
+        met.lower_bound = Q_(new_lower, "millimolar")
 
 
 def graph_ln_dist(mu, sigma):

@@ -32,6 +32,8 @@ from scripts.metabolite_utils import metabolite_to_bigg
 from scipy.stats import norm
 from scripts.gen_model import constrain_bounds_fva
 
+from scripts.metabolite_utils import apply_met_tva
+
 def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1, open_exch = False):
     "Returns a list of blocked reactions. Does not remove the reactions from the model."
 
@@ -125,6 +127,8 @@ def tfva_write_scenarios(tmodel, condition, output_folder, OUTPUT_LOG, lnc_unit=
         for rxn in blocked_p:
             tmodel.reactions.get_by_id(rxn).lower_bound = 0
             tmodel.reactions.get_by_id(rxn).upper_bound = 0
+
+    apply_met_tva(tmodel, "hpc/WT-Glc_I_TFVA_Conc.mps.gz_objval.txt")
 
     tmodel.m = None  
     tmodel.objective = tmodel.reactions.biomass_EX  
