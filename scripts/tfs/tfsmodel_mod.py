@@ -34,7 +34,7 @@ class SupTFSmodel(tfs.TFSModel):
     problem : pta.PmoProblem
     Additional sampler parameters can be provided as keyword arguments.
     """
-
+    
     def __init__(self, model, thermodynamic_space, tbasis, problem, num_samples=int(5e5),
                  num_dir_samples=int(5e7), num_initial_steps=None, max_steps=2**25,
                  max_threads=32, warmup=2, **kwargs):

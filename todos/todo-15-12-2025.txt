@@ -1,0 +1,4 @@
+Relax conc bounds tfs points
+Comment out [:, idx_contrained_old]
+Take square root of matrix
+Write about flux coupling analysis

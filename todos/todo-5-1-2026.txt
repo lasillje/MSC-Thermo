@@ -1,0 +1,8 @@
+Reduce netowrk
+    Compare reduced model, E. coli core model (load("ecoli_core))
+    Compare if manage to do both
+    Results for 1 condition
+    Reduced model still takes too long
+        - E. coli core model as backup
+            - Maybe add exchange reactions
+            
