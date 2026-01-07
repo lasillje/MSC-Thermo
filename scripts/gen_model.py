@@ -292,6 +292,7 @@ def gen_model_from_core(name: str, model_data: str, kegg: str, reed: str, inchi:
 
     return tmodel
 
+#def apply_physio_ecoli_core()
     
 
 def gen_model(name: str, model_xlsx: str, kegg: str, reed: str, inchi:str, gams: str, output_log: str, add_o2: bool, add_co2: bool, update_thermodynamics=True):
@@ -816,7 +817,9 @@ def constrain_bounds_fva(tmodel, output_log: str):
         
         write_to_log(output_log, f"{r.id} new bounds are {lower_bound}, {upper_bound}")
 
-        r.lower_bound, r.upper_bound = lower_bound, upper_bound
+        #r.lower_bound, r.upper_bound = lower_bound, upper_bound
+        r.upper_bound = max(lower_bound, upper_bound)
+        r.lower_bound = min(lower_bound, upper_bound)
 
 def run_fva(tmodel, output_log: str):
     "Tighten bounds of a ThermoModel's reactions"

@@ -227,6 +227,106 @@ def tfva_write_scenarios_one_model(tmodel, condition, output_folder, OUTPUT_LOG,
     gm.write(f"{output_folder}{path.sep}{condition}_{lnc_unit}_{rxn_id}_{idx}_{suffix}_{suffix_fva}_tfva.mps.gz")
 
 
+def tfva_run_scenarios_one_model(tmodel, name, condition, output_folder, REMOVE_BLOCKED=False, APPLY_FVA=False):
+    "Writes TFVA scenario files to the specified output folder, 1 file for each reaction"
+    blocked_p = list_blocked_reactions(tmodel, condition, None, 1, False)
+    print(len(blocked_p))
+
+    if REMOVE_BLOCKED:
+        tmodel.remove_reactions(blocked_p, remove_orphans=True)
+
+        if APPLY_FVA:
+
+            print("Bounds before FVA: ")
+            for x in tmodel.reactions:
+                print(f"{x.lower_bound}, {x.upper_bound}")
+
+            constrain_bounds_fva(tmodel, None)
+
+            print("Bounds after FVA: ")
+            for x in tmodel.reactions:
+                print(f"{x.lower_bound}, {x.upper_bound}")
+
+        for rxn in tmodel.reactions:
+            thermo_flux.tools.drg_tools.reaction_balance(rxn, balance_charge=True, balance_mg=False)
+        tmodel.update_thermo_info(fit_unknown_dfG0=True)
+    else:
+        for rxn in blocked_p:
+            tmodel.reactions.get_by_id(rxn).lower_bound = 0
+            tmodel.reactions.get_by_id(rxn).upper_bound = 0
+
+    #apply_met_tva(tmodel, "hpc/WT-Glc_I_TFVA_Conc.mps.gz_objval.txt")
+
+    tmodel.m = None  
+    tmodel.objective = tmodel.reactions.biomass_EX  
+    tmodel.add_TFBA_variables()
+
+    #tmodel.m.Params.TimeLimit = 5
+    #tmodel.m.optimize()
+
+    vars = []
+    for rxn_id in tmodel.reactions:
+        rxn = tmodel.reactions.get_by_id(rxn_id.id)
+        idx = tmodel.reactions.index(rxn)
+
+        v_var = tmodel.mvars["v"][0][idx]
+        vars.append(v_var)
+        print(f"Added reaction: {rxn_id}, {idx}, {v_var}")
+    print(f"Count: {len(vars)}")
+
+    gm = variability_analysis(tmodel, vars)
+
+    gm.optimize()
+
+    gm.write(f"{output_folder}{path.sep}{name}_{condition}.sol")
+
+
+def tfva_run_scenarios_one_model_mets(tmodel, name, condition, output_folder, OUTPUT_LOG, REMOVE_BLOCKED=True, APPLY_FVA=True):
+    "Writes TFVA scenario files to the specified output folder, 1 file for each reaction"
+    blocked_p = list_blocked_reactions(tmodel, condition, OUTPUT_LOG, 1, False)
+    print(len(blocked_p))
+
+    if REMOVE_BLOCKED:
+        tmodel.remove_reactions(blocked_p, remove_orphans=True)
+
+        if APPLY_FVA:
+
+            print("Bounds before FVA: ")
+            for x in tmodel.reactions:
+                print(f"{x.lower_bound}, {x.upper_bound}")
+
+            constrain_bounds_fva(tmodel, OUTPUT_LOG)
+
+            print("Bounds after FVA: ")
+            for x in tmodel.reactions:
+                print(f"{x.lower_bound}, {x.upper_bound}")
+
+        for rxn in tmodel.reactions:
+            thermo_flux.tools.drg_tools.reaction_balance(rxn, balance_charge=True, balance_mg=False)
+        tmodel.update_thermo_info(fit_unknown_dfG0=True)
+    else:
+        for rxn in blocked_p:
+            tmodel.reactions.get_by_id(rxn).lower_bound = 0
+            tmodel.reactions.get_by_id(rxn).upper_bound = 0
+
+    tmodel.m = None  
+    tmodel.objective = tmodel.reactions.biomass_EX  
+    tmodel.add_TFBA_variables()
+
+    tmodel.m.Params.TimeLimit = 20
+    tmodel.m.optimize()
+
+    vars = []
+    for i, met in enumerate(tmodel.metabolites):
+        v = tmodel.mvars["ln_conc"][0][i]
+        vars.append(v)
+        print(f"Added {met.id} : { v }")
+
+    gm = variability_analysis(tmodel, vars)
+    gm.optimize()
+    
+    gm.write(f"{output_folder}{path.sep}{name}_{condition}_mets.sol")
+
 def tfva_update_bounds(tmodel, condition, tfva_results_dir):
 
     updated_rxns = set()
