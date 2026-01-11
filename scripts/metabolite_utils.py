@@ -162,6 +162,32 @@ def return_mets_tva(met_tva_file):
 
     return bounds_tuple
 
+def return_fluxes_tfva(flux_tfva_file):
+    bounds_tuple = []
+    with open(flux_tfva_file, "r") as f:
+        for line in f:
+            clean_line = line.strip()
+            if not clean_line:
+                print(f"Skipping line {clean_line}")
+                continue
+            try:
+                index_str, bounds_str = clean_line.split(':', 1)
+                index = int(index_str.strip())
+
+                cleaned_bounds_str = bounds_str.strip().strip('[] ')
+                lower_str, upper_str = cleaned_bounds_str.split(',')
+
+                lower = float(lower_str.strip())
+                upper = float(upper_str.strip())
+                
+                bounds_tuple.append((lower, upper))
+            except ValueError as e:
+                print(f"Skipping line due to parsing error: '{line.strip()}' - Error: {e}")
+            except Exception as e:
+                print(f"An unexpected error occurred while processing line: '{line.strip()}' - Error: {e}") 
+
+    return bounds_tuple
+
 def get_met_tva(tmodel, met_tva_file):
     bounds_dict = dict()
     with open(met_tva_file, "r") as f:

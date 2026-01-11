@@ -3,9 +3,19 @@ import numpy as np
 from scipy.linalg import null_space
 import networkx as nx
 import pandas as pd
+from equilibrator_api import Q_
 
 def find_coupled_reactions(model):
     
+    protected_ids = set()
+    for rxn in model.reactions:
+        if "biomass" in rxn.id.lower():
+            protected_ids.add(rxn.id)
+        if rxn.boundary or len(rxn.metabolites) == 1:
+            protected_ids.add(rxn.id)
+        if len({m.compartment for m in rxn.metabolites}) > 1:
+            protected_ids.add(rxn.id)
+
     S = cobra.util.array.create_stoichiometric_matrix(model, array_type="DataFrame" )
     reaction_ids = S.columns.tolist()
     S_np = S.values
@@ -17,10 +27,12 @@ def find_coupled_reactions(model):
 
     for i in range(len(reaction_ids)):
         cur_reaction = reaction_ids[i]
+        if cur_reaction in protected_ids: continue
         pairs.setdefault(cur_reaction, {})
 
         for j in range(i + 1, len(reaction_ids)):
             next_reaction = reaction_ids[j]
+            if next_reaction in protected_ids: continue
             pairs.setdefault(next_reaction, {})
 
             n_i = N[i, :]
@@ -54,14 +66,7 @@ def find_coupled_reactions(model):
     for rxn_set in coupled_reaction_sets:
         if len(rxn_set) > 1:
             
-            priority_ids = ['biomass_EX']
-
             representative = sorted(list(rxn_set))[0]
-            
-            for p_id in priority_ids:
-                if p_id in rxn_set:
-                    representative = p_id
-            
         
             linked_reactions = {}
             for rxn in rxn_set:
@@ -81,6 +86,159 @@ def find_coupled_reactions(model):
             
     return final_rxns
 
+def find_dead_end_metabolites(model):
+    """
+    Identifies metabolites that are only produced or only consumed.
+    """
+    dead_ends = []
+    for metabolite in model.metabolites:
+        rxns = metabolite.reactions
+        
+        if len(rxns) == 0:
+            dead_ends.append(metabolite)
+            continue
+            
+        #coeffs = [r.get_coefficient(metabolite) for r in rxns]
+        
+        #if all(c > 0 for c in coeffs) or all(c < 0 for c in coeffs):
+        #    dead_ends.append(metabolite)
+    
+    print(f"Found {len(dead_ends)} dead-end metabolites.")
+    for x in dead_ends:
+        print(x.id)
+    return dead_ends
+
+def find_coupled_metabolites(model):
+    
+    tol = 1e-9
+
+    S = cobra.util.array.create_stoichiometric_matrix(model, array_type="DataFrame" )
+
+    proportional_rows = {}
+
+    for met_id in S.index:
+
+        row = S.loc[met_id].values
+
+        non_zeros = np.abs(row) > tol
+
+        if not np.any(non_zeros):
+            continue
+
+        indices = np.where(non_zeros)[0]
+        values = row[indices]
+
+        factor = values[0]
+        normalized_values = values / factor
+
+        row_hash = (tuple(indices), tuple(np.round(normalized_values, 6)))
+
+        if row_hash not in proportional_rows:
+            proportional_rows[row_hash] = []
+
+        proportional_rows[row_hash].append({'id': met_id, 'factor': factor})
+
+    coupling_map = {}
+
+    for hash, group in proportional_rows.items():
+        group_sorted = sorted(group, key=lambda x: x['id'])
+
+        representative = group_sorted[0]
+        
+        rep_id = representative['id']
+        rep_factor = representative['factor']
+
+        linked_mets = {}
+
+        for item in group_sorted[1:]:
+            ratio = item['factor'] / rep_factor
+            linked_mets[item['id']] = ratio
+
+        coupling_map[rep_id] = linked_mets
+
+    print(coupling_map)
+    return coupling_map
+
+def collapse_coupled_reactions(model, coupling_map):
+    tol = 1e-9
+    print(f"Excluding biomass, boundary reactions.")
+    print(f"Starting with {len(model.reactions)} reactions.")
+    for rep, linked in coupling_map.items():
+        rep_rxn = model.reactions.get_by_id(rep)
+
+        for rxn_id, ratio in linked.items():
+            rxn = model.reactions.get_by_id(rxn_id)
+
+            target_metabolites = {met: coeff * ratio for met, coeff in rxn.metabolites.items()}
+            rep_rxn.add_metabolites(target_metabolites)
+
+            for met in list(rep_rxn.metabolites):
+                if abs(rep_rxn.get_coefficient(met)) < tol:
+                    rep_rxn.add_metabolites({met: -rep_rxn.get_coefficient(met)})
+
+            if ratio > 0:
+                rep_rxn.lower_bound = max(
+                    rep_rxn.lower_bound, rxn.lower_bound / ratio
+                )
+                rep_rxn.upper_bound = min(
+                    rep_rxn.upper_bound, rxn.upper_bound / ratio
+                )
+            else:
+                rep_rxn.lower_bound = max(
+                    rep_rxn.lower_bound, rxn.upper_bound / ratio
+                )
+                rep_rxn.upper_bound = min(
+                    rep_rxn.upper_bound, rxn.lower_bound / ratio
+                )
+
+            model.remove_reactions([rxn])
+
+    for r in model.reactions:
+        if len(r.metabolites) == 0:
+            model.remove_reactions([r])
+
+    print(f"Ended with {len(model.reactions)} reactions.")
+    return model
+
+def collapse_coupled_metabolites(model, coupling_map):
+
+    print(f"Starting with {len(model.metabolites)} metabolites.")
+
+    dfg_dict = {met.id: getattr(met, 'dfG0prime') for met in model.metabolites}
+    new_dfg_dict = dict()
+
+    for rep_id, linked in coupling_map.items():
+
+        base_energy = float(dfg_dict[rep_id].m)
+        added_energy = 0.0
+
+        for linked_id, ratio in linked.items():
+            added_energy += ratio * float(dfg_dict[linked_id].m)
+        
+        new_dfg_dict[rep_id] = Q_(base_energy + added_energy, "kJ/M")
+        model.metabolites.get_by_id(rep_id).dfG0prime = new_dfg_dict[rep_id]
+
+    mets_to_remove = [model.metabolites.get_by_id(mid) for mid in linked.keys()]
+    model.remove_metabolites(mets_to_remove)
+
+    return model
+    
+def compress_model_full(model):
+
+    print("ONLY REACTIONS")
+    rxn_map = find_coupled_reactions(model)
+    model = collapse_coupled_reactions(model, rxn_map)
+
+    # If enabled dont forget to assign dfG0 before this point
+    #met_map = find_coupled_metabolites(model)
+    #model = collapse_coupled_metabolites(model, met_map)
+
+    #dead_mets = find_dead_end_metabolites(model)
+    #model.remove_metabolites(dead_mets)
+
+    #print(f"Ended with {len(model.metabolites)} metabolites.")
+
+    return model
 
 def validate_coupling(cobra_model, coupling_results, samples=500, tolerance=1e-9):
     cobra_model.optimize()

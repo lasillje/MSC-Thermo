@@ -791,6 +791,12 @@ def apply_physio_data(tmodel, condition :str, input_exp: str, input_conc: str, i
         tmodel.metabolites.get_by_id(met).upper_bound = Q_(row["conc_M_max"], "M")
         write_to_log(output_log, f" - {met}: ({tmodel.metabolites.get_by_id(met).lower_bound :.3}, {tmodel.metabolites.get_by_id(met).upper_bound :.3})")
 
+
+    #Normalize to native floats otherwise SBML will error when exporting
+    for r in tmodel.reactions:
+        r.lower_bound = float(r.lower_bound)
+        r.upper_bound = float(r.upper_bound)
+
     return tmodel
 
 def constrain_bounds_fva(tmodel, output_log: str):

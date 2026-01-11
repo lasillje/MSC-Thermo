@@ -1,0 +1,13 @@
+Add metabolites for missing metabolome
+    Add connected pathways
+
+Comparison in results
+    Compare for 1 condition
+    One of the two models both conditions
+
+
+Cplex?
+https://github.com/maxm4/mparser
+
+Big model -> too long -> have to reduce the network -> exploring Cplex -> ecoli_core validate
+    - Ecoli core -> actual results

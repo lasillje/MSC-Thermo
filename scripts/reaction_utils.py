@@ -227,6 +227,58 @@ def tfva_write_scenarios_one_model(tmodel, condition, output_folder, OUTPUT_LOG,
     gm.write(f"{output_folder}{path.sep}{condition}_{lnc_unit}_{rxn_id}_{idx}_{suffix}_{suffix_fva}_tfva.mps.gz")
 
 
+def save_multiscenario_solutions(m, output_folder, name):
+    #save multiscenario solutions
+    no_scenarios = m.NumScenarios
+    if no_scenarios > 0:
+        obj_val = {}
+        obj_bound = {}
+        optimal_bounds = {}
+        MIPGaps = {}
+        for i in range(0, no_scenarios, 2):
+            rxn_idx = int(i / 2)
+            # Minimization:
+            m.params.ScenarioNumber = i
+            m.update()
+            ObjBound = m.ScenNObjBound
+            ObjVal = m.ScenNObjVal
+        #  print(rxn_idx, ObjBound, ObjVal)
+            if ObjVal != 0:
+                MIPGap = abs((ObjBound-ObjVal)/ObjVal)
+            else:
+                MIPGap = 0
+
+            obj_val[rxn_idx] = [(-1) * ObjVal]
+            obj_bound[rxn_idx] = [(-1) * ObjBound]
+            MIPGaps[rxn_idx] = [MIPGap]
+
+            if MIPGap <= m.params.MIPGap:
+                optimal_bounds[rxn_idx] = [(-1) * ObjBound]
+            else:
+                optimal_bounds[rxn_idx] = [float('nan')]
+
+            # Maximization:
+            m.params.ScenarioNumber = i + 1
+            m.update()
+            ObjBound = m.ScenNObjBound
+            ObjVal = m.ScenNObjVal
+            if ObjVal != 0:
+                MIPGap = abs((ObjBound-ObjVal)/ObjVal)
+            else:
+                MIPGap = 0
+            obj_val[rxn_idx].append((+1) * m.ScenNObjVal)
+            obj_bound[rxn_idx].append((1) * m.ScenNObjBound)
+            MIPGaps[rxn_idx].append(MIPGap)
+            if MIPGap <= 0.0001:
+                optimal_bounds[rxn_idx].append((1) * ObjBound)
+            else:
+                optimal_bounds[rxn_idx].append(float('nan'))
+
+        with open(f"{output_folder}/{name}_objval.txt", "w") as f:
+            for k, val in obj_val.items():
+                f.writelines(f"{k}: {val}\n")
+
+
 def tfva_run_scenarios_one_model(tmodel, name, condition, output_folder, REMOVE_BLOCKED=False, APPLY_FVA=False):
     "Writes TFVA scenario files to the specified output folder, 1 file for each reaction"
     blocked_p = list_blocked_reactions(tmodel, condition, None, 1, False)
@@ -261,7 +313,7 @@ def tfva_run_scenarios_one_model(tmodel, name, condition, output_folder, REMOVE_
     tmodel.objective = tmodel.reactions.biomass_EX  
     tmodel.add_TFBA_variables()
 
-    #tmodel.m.Params.TimeLimit = 5
+    tmodel.m.Params.TimeLimit = 500
     #tmodel.m.optimize()
 
     vars = []
@@ -278,8 +330,8 @@ def tfva_run_scenarios_one_model(tmodel, name, condition, output_folder, REMOVE_
 
     gm.optimize()
 
+    save_multiscenario_solutions(gm, output_folder, name)
     gm.write(f"{output_folder}{path.sep}{name}_{condition}.sol")
-
 
 def tfva_run_scenarios_one_model_mets(tmodel, name, condition, output_folder, OUTPUT_LOG, REMOVE_BLOCKED=True, APPLY_FVA=True):
     "Writes TFVA scenario files to the specified output folder, 1 file for each reaction"
@@ -313,7 +365,7 @@ def tfva_run_scenarios_one_model_mets(tmodel, name, condition, output_folder, OU
     tmodel.objective = tmodel.reactions.biomass_EX  
     tmodel.add_TFBA_variables()
 
-    tmodel.m.Params.TimeLimit = 20
+    tmodel.m.Params.TimeLimit = 500
     tmodel.m.optimize()
 
     vars = []
@@ -325,6 +377,7 @@ def tfva_run_scenarios_one_model_mets(tmodel, name, condition, output_folder, OU
     gm = variability_analysis(tmodel, vars)
     gm.optimize()
     
+    save_multiscenario_solutions(gm, output_folder, name)
     gm.write(f"{output_folder}{path.sep}{name}_{condition}_mets.sol")
 
 def tfva_update_bounds(tmodel, condition, tfva_results_dir):
