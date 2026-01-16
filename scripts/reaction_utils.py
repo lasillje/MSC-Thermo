@@ -103,130 +103,6 @@ def refine_subsystems(df):
 
         sleep(0.2)
 
-def tfva_write_scenarios(tmodel, condition, output_folder, OUTPUT_LOG, lnc_unit="M", reactions_list = None, REMOVE_BLOCKED=True, APPLY_FVA=True):
-    "Writes TFVA scenario files to the specified output folder, 1 file for each reaction"
-    blocked_p = list_blocked_reactions(tmodel, condition, OUTPUT_LOG, 1, False)
-    print(len(blocked_p))
-
-    if REMOVE_BLOCKED:
-        tmodel.remove_reactions(blocked_p, remove_orphans=True)
-
-        if APPLY_FVA:
-
-            print("Bounds before FVA: ")
-            for x in tmodel.reactions:
-                print(f"{x.lower_bound}, {x.upper_bound}")
-
-            constrain_bounds_fva(tmodel, OUTPUT_LOG)
-
-            print("Bounds after FVA: ")
-            for x in tmodel.reactions:
-                print(f"{x.lower_bound}, {x.upper_bound}")
-
-        for rxn in tmodel.reactions:
-            thermo_flux.tools.drg_tools.reaction_balance(rxn, balance_charge=True, balance_mg=False)
-        tmodel.update_thermo_info(fit_unknown_dfG0=True)
-    else:
-        for rxn in blocked_p:
-            tmodel.reactions.get_by_id(rxn).lower_bound = 0
-            tmodel.reactions.get_by_id(rxn).upper_bound = 0
-
-    #apply_met_tva(tmodel, "hpc/WT-Glc_I_TFVA_Conc.mps.gz_objval.txt")
-
-    tmodel.m = None  
-    tmodel.objective = tmodel.reactions.biomass_EX  
-    tmodel.add_TFBA_variables(lnc_unit=lnc_unit)
-
-    tmodel.m.Params.TimeLimit = 20
-    tmodel.m.optimize()
-
-    folder = "Blocked_Removed" if REMOVE_BLOCKED else "Blocked_Restricted"
-    suffix = "REMOVED" if REMOVE_BLOCKED else "RESTRICTED"
-    suffix_fva = "FVA" if APPLY_FVA else ""
-
-    rxn_ids = [r.id for r in tmodel.reactions]
-    if reactions_list is not None:
-        rxn_ids = reactions_list
-
-    for rxn_id in rxn_ids:
-        rxn = tmodel.reactions.get_by_id(rxn_id)
-        idx = tmodel.reactions.index(rxn)
-
-        v_var = [tmodel.mvars["v"][0][idx]]
-        gm = variability_analysis(tmodel, v_var)
-        gm.write(f"{output_folder}{path.sep}{condition}_{lnc_unit}_{rxn_id}_{idx}_{suffix}_{suffix_fva}_tfva.mps.gz")
-
-
-def tfva_write_scenarios_one_model(tmodel, condition, output_folder, OUTPUT_LOG, lnc_unit="M", reactions_list = None, REMOVE_BLOCKED=True, APPLY_FVA=True):
-    "Writes TFVA scenario files to the specified output folder, 1 file for each reaction"
-    blocked_p = list_blocked_reactions(tmodel, condition, OUTPUT_LOG, 1, False)
-    print(len(blocked_p))
-
-    if REMOVE_BLOCKED:
-        tmodel.remove_reactions(blocked_p, remove_orphans=True)
-
-        if APPLY_FVA:
-
-            print("Bounds before FVA: ")
-            for x in tmodel.reactions:
-                print(f"{x.lower_bound}, {x.upper_bound}")
-
-            constrain_bounds_fva(tmodel, OUTPUT_LOG)
-
-            print("Bounds after FVA: ")
-            for x in tmodel.reactions:
-                print(f"{x.lower_bound}, {x.upper_bound}")
-
-        for rxn in tmodel.reactions:
-            thermo_flux.tools.drg_tools.reaction_balance(rxn, balance_charge=True, balance_mg=False)
-        tmodel.update_thermo_info(fit_unknown_dfG0=True)
-    else:
-        for rxn in blocked_p:
-            tmodel.reactions.get_by_id(rxn).lower_bound = 0
-            tmodel.reactions.get_by_id(rxn).upper_bound = 0
-
-    #apply_met_tva(tmodel, "hpc/WT-Glc_I_TFVA_Conc.mps.gz_objval.txt")
-
-    tmodel.m = None  
-    tmodel.objective = tmodel.reactions.biomass_EX  
-    tmodel.add_TFBA_variables(lnc_unit=lnc_unit)
-
-    tmodel.m.Params.TimeLimit = 20
-    tmodel.m.optimize()
-
-    folder = "Blocked_Removed" if REMOVE_BLOCKED else "Blocked_Restricted"
-    suffix = "REMOVED" if REMOVE_BLOCKED else "RESTRICTED"
-    suffix_fva = "FVA" if APPLY_FVA else ""
-
-    rxn_ids = [r.id for r in tmodel.reactions]
-    if reactions_list is not None:
-        rxn_ids = reactions_list
-    
-    links = find_coupled_reactions(tmodel)
-
-    dont_count = []
-    for key in links:
-        for x in links[key]:
-            dont_count.append(x)
-    x = set(dont_count)
-    print(len(x))
-
-    reactions = [r.id for r in tmodel.reactions if r.id not in dont_count]
-
-    vars = []
-    for rxn_id in reactions:
-        rxn = tmodel.reactions.get_by_id(rxn_id)
-        idx = tmodel.reactions.index(rxn)
-
-        v_var = tmodel.mvars["v"][0][idx]
-        vars.append(v_var)
-        print(f"Added reaction: {rxn_id}, {idx}, {v_var}")
-    print(f"Count: {len(vars)}")
-
-    gm = variability_analysis(tmodel, vars)
-    gm.write(f"{output_folder}{path.sep}{condition}_{lnc_unit}_{rxn_id}_{idx}_{suffix}_{suffix_fva}_tfva.mps.gz")
-
-
 def save_multiscenario_solutions(m, output_folder, name):
     #save multiscenario solutions
     no_scenarios = m.NumScenarios
@@ -279,7 +155,7 @@ def save_multiscenario_solutions(m, output_folder, name):
                 f.writelines(f"{k}: {val}\n")
 
 
-def tfva_run_scenarios_one_model(tmodel, name, condition, output_folder, REMOVE_BLOCKED=False, APPLY_FVA=False):
+def tfva_run_scenarios_one_model(tmodel, name, condition, output_folder, REMOVE_BLOCKED=False, APPLY_FVA=False, ONLY_WRITE=False, RUN_DIRECTLY=False, mipgap = 0.001, reaction_list=None):
     "Writes TFVA scenario files to the specified output folder, 1 file for each reaction"
     blocked_p = list_blocked_reactions(tmodel, condition, None, 1, False)
     print(len(blocked_p))
@@ -313,28 +189,57 @@ def tfva_run_scenarios_one_model(tmodel, name, condition, output_folder, REMOVE_
     tmodel.objective = tmodel.reactions.biomass_EX  
     tmodel.add_TFBA_variables()
 
-    tmodel.m.Params.TimeLimit = 500
+    tmodel.m.Params.TimeLimit = 99999
+    tmodel.m.Params.MIPGap = mipgap
     #tmodel.m.optimize()
 
     vars = []
-    for rxn_id in tmodel.reactions:
+
+    rxns = tmodel.reactions if reaction_list is None else reaction_list
+
+    for rxn_id in rxns:
+
         rxn = tmodel.reactions.get_by_id(rxn_id.id)
         idx = tmodel.reactions.index(rxn)
 
-        v_var = tmodel.mvars["v"][0][idx]
-        vars.append(v_var)
-        print(f"Added reaction: {rxn_id}, {idx}, {v_var}")
+        if RUN_DIRECTLY:
+
+            tmodel.m = None  
+
+            tmodel.objective = tmodel.reactions.biomass_EX  
+            tmodel.add_TFBA_variables()
+
+            tmodel.m.Params.TimeLimit = 99999
+            tmodel.m.Params.MIPGap = mipgap
+
+            v_var = tmodel.mvars["v"][0][idx]
+
+            print(f"Running reaction: {rxn_id}, {idx}, {v_var}")
+            gm = variability_analysis(tmodel, [v_var])
+
+            if not ONLY_WRITE:
+                gm.optimize()
+                save_multiscenario_solutions(gm, output_folder, f"{name}_{rxn_id.id}_{idx}")
+            else:
+                gm.write(f"{output_folder}{path.sep}{idx}_{name}_{condition}_{rxn_id.id}.mps.gz")
+        else:
+           # v_var = tmodel.mvars["v"][0][idx]
+            vars.append(tmodel.mvars["v"][0][idx])
+            print(f"Added reaction: {rxn_id}, {idx}")
     print(f"Count: {len(vars)}")
 
-    gm = variability_analysis(tmodel, vars)
+    if not RUN_DIRECTLY:
 
-    gm.optimize()
+        gm = variability_analysis(tmodel, vars)
 
-    save_multiscenario_solutions(gm, output_folder, name)
-    gm.write(f"{output_folder}{path.sep}{name}_{condition}.sol")
+        if not ONLY_WRITE:
+            gm.optimize()
+            save_multiscenario_solutions(gm, output_folder, name)
+            gm.write(f"{output_folder}{path.sep}{name}_{condition}.sol")
+        else:
+            gm.write(f"{output_folder}{path.sep}{name}_{condition}.mps.gz")
 
-def tfva_run_scenarios_one_model_mets(tmodel, name, condition, output_folder, OUTPUT_LOG, REMOVE_BLOCKED=True, APPLY_FVA=True):
-    "Writes TFVA scenario files to the specified output folder, 1 file for each reaction"
+def tfva_run_scenarios_one_model_mets(tmodel, name, condition, output_folder, OUTPUT_LOG, REMOVE_BLOCKED=True, APPLY_FVA=True, ONLY_WRITE=False):
     blocked_p = list_blocked_reactions(tmodel, condition, OUTPUT_LOG, 1, False)
     print(len(blocked_p))
 
@@ -365,8 +270,9 @@ def tfva_run_scenarios_one_model_mets(tmodel, name, condition, output_folder, OU
     tmodel.objective = tmodel.reactions.biomass_EX  
     tmodel.add_TFBA_variables()
 
-    tmodel.m.Params.TimeLimit = 500
-    tmodel.m.optimize()
+    tmodel.m.Params.TimeLimit = 99999
+    tmodel.m.Params.MIPGap = 0.001
+    #tmodel.m.optimize()
 
     vars = []
     for i, met in enumerate(tmodel.metabolites):
@@ -375,10 +281,13 @@ def tfva_run_scenarios_one_model_mets(tmodel, name, condition, output_folder, OU
         print(f"Added {met.id} : { v }")
 
     gm = variability_analysis(tmodel, vars)
-    gm.optimize()
+    if not ONLY_WRITE:
+        gm.optimize()
     
-    save_multiscenario_solutions(gm, output_folder, name)
-    gm.write(f"{output_folder}{path.sep}{name}_{condition}_mets.sol")
+        save_multiscenario_solutions(gm, output_folder, name)
+        gm.write(f"{output_folder}{path.sep}{name}_{condition}_mets.sol")
+    else:
+        gm.write(f"{output_folder}{path.sep}{name}_{condition}_mets.mps.gz")
 
 def tfva_update_bounds(tmodel, condition, tfva_results_dir):
 
@@ -449,127 +358,6 @@ def tfva_update_bounds(tmodel, condition, tfva_results_dir):
     print(missing_rxns)
 
     return updated
-
-def pta_get_parameters(tmodel, add_fake_p = False, temp_k = 310.15):
-    
-    # Our E. coli model has a temp of 310.15 (from model.xlsx)
-
-    compartments = ["e", "c"]
-
-    # Enkie does use a periplasm ('p') compartment which is missing in our model
-    # Periplasm values will use the 'e' compartment's values with the same difference applied as the base enkie 'p' compartment
-    # Default Enkie temp is 310.5 K
-    # pH[p] = pH[e] + 0.01
-    # pMg[p] = pMg[e]
-    # I[p] = I[e]
-    # phi[p] = phi[e] - 0.001
-    # Also, we only have the difference of membrane potential (Phic - Phie), while Enkie requires both seperately
-    # For now, phi[e] = 0, and phi[c] = tmodel.phi['ce'] * -1
-    # To keep consistent with Enkie
-    # https://gitlab.com/csb.ethz/enkie/-/blob/main/enkie/data/compartment_parameters/e_coli.csv?ref_type=heads
-    
-    phi_values = {"e": 0, "c": tmodel.phi['ce'].magnitude * -1}
-
-    compartment_pH: Dict[str, Q] = {}
-    compartment_pMg: Dict[str, Q] = {}
-    compartment_I: Dict[str, Q] = {}
-    compartment_phi: Dict[str, Q] = {}
-    T = Q(temp_k, "K")
-
-    for c in compartments:
-        compartment_pH[c] = tmodel.pH[c]
-        compartment_pMg[c] = tmodel.pMg[c]
-        compartment_I[c] = tmodel.I[c]
-        compartment_phi[c] = Q(phi_values[c], "V")
-    
-    if(add_fake_p):
-        compartment_pH['p'] = compartment_pH['e'] + Q(0.01)
-        compartment_pMg['p'] = compartment_pMg['e']
-        compartment_I['p'] = compartment_I['e']
-        compartment_phi['p'] = compartment_phi['e'] - Q(0.001, "V")
-
-    return CompartmentParameters(
-        compartment_pH, compartment_pMg, compartment_I, compartment_phi, T
-    )
-
-# def pta_get_concentrations(tmodel, metabolite_namespace = None,):
-#     # ThermoModel metabolite concentrations are defined in linear space
-#     # PTA requires them to be in ln space, so they will be converted to that
-#     # Default data: https://gitlab.com/csb.ethz/pta/-/blob/main/pta/data/concentration_priors/M9_aerobic.csv?ref_type=heads
-
-#     # Taken from pta concentrations_prior.py
-#     default_log_conc = LogNormalDistribution(-8.3371, 1.9885)
-#     #default_log_conc = LogNormalDistribution(-6.3371, 6.9885)
-
-#     met_distributions = {}
-#     default_distribution: Any = default_log_conc
-
-#     # Create log normal distributions for every met
-#     for met in tmodel.metabolites:
-#         lb = met.lower_bound.magnitude
-#         ub = met.upper_bound.magnitude
-
-#         if(lb < ub or (lb == 0 and ub == 0)):
-#             continue
-
-#         met_id_split = met.id.split("_")
-#         met_compartment = None
-
-#         if(met_id_split):
-#             for s in met_id_split:
-#                 if s == "c" or s == "e":
-#                     met_compartment = s
-
-#         if met_compartment == None:
-#             continue
-        
-#         log_dist = conc_to_logdist(lb, ub)
-        
-#         met_id_cleaned = metabolite_to_bigg(met.id)
-
-#         met_name = met_id_cleaned if metabolite_namespace is None else f"{metabolite_namespace}:{met_id_cleaned}"
-#         met_distributions[(met_name, met_compartment)] = log_dist
-
-#     return ConcentrationsPrior(
-#         metabolite_distributions = met_distributions,
-#         default_distribution = default_distribution
-#     )
-
-def fix_negative_upper_bounds(model, tolerance: float = 1e-9):
-    """
-    Identifies boundary reactions that have a small, non-zero negative upper bound,
-    which can cause a ValueError when internal PTA functions attempt to set 
-    reaction.lower_bound = 0 before setting reaction.upper_bound = 0.
-    
-    If reaction.upper_bound is < 0, it means the reaction is forced to only
-    operate in the reverse direction. To allow the boundary blocking step (v=0),
-    we temporarily set the upper bound to 0
-
-    An oversight in the PTA package causes it to error out when UB < 0, so this fix is necessary for now..
-    """
-    modified_count = 0
-    print("\nStarting check for boundary reactions with negative upper bounds...")
-    
-    # A set of reactions where the original UB < 0
-    reactions_to_fix = []
-    
-    for reaction in model.boundary:
-
-        if reaction.upper_bound < -tolerance:
-            reactions_to_fix.append(reaction)
-            print(f"Found boundary reaction '{reaction.id}' with UB: {reaction.upper_bound:.4f}. Fixing...")
-            
-    for reaction in reactions_to_fix:
-        # Reaction upper bounds are set to 0.0 to fix the mistake in PTA of setting the lower bound to 0 first, which causes a ValueError
-        reaction.upper_bound = 0.0 
-        modified_count += 1
-    
-    if modified_count == 0:
-        print("No boundary reactions required fixing.")
-    else:
-        print(f"Completed boundary fix. Total reactions temporarily modified: {modified_count}")
-        
-    return reactions_to_fix
 
 def count_blocked_pathways(reactions, name, condition, model_xlsx: str):
     "Counts and plots blocked pathways from a given list of blocked reactions and model xlsx file "

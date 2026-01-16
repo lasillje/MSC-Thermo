@@ -56,6 +56,7 @@ class Preprocess:
             data_bounds_flux = pd.read_csv(vbound_file, index_col=0)
 
         self.model = read_sbml_model(cobra_file)
+        self.model.objective = self.model.reactions.biomass_EX
 
         # Load drG0 info from provided files
         drg0_prime_mean_init = pd.read_csv(drG0file, index_col=0).values.T[0]
@@ -113,9 +114,9 @@ class Preprocess:
         self.S = S
 
         # Reactions for which the second law is ignored (original indices)
-        #snd_ignored_idxs = ['biomass_EX', 'EX_o2', 'biomass_ce', 'EX_ac', 'biomass', 'EX_so4', 'EX_oro', 'H2Ot', 'EX_pi', 'EX_nh3', 'EX_co2', 'EX_h', 'EX_glc', 'EX_h2o']
+        snd_ignored_idxs = ['biomass_EX', 'EX_o2', 'biomass_ce', 'EX_ac', 'biomass', 'EX_so4', 'EX_oro', 'H2Ot', 'EX_pi', 'EX_nh3', 'EX_co2', 'EX_h', 'EX_glc', 'EX_h2o']
         #snd_ignored_idxs = [x.id for x in self.model.reactions if "biomass" in x.id or "EX_" in x.id or "BIOMASS" in x.id]
-        snd_ignored_idxs = ['EX_h2o_e', 'EX_nh4_e', 'EX_glu__L_e', 'EX_lac__D_e', 'EX_acald_e', 'EX_akg_e', 'biomass_ce', 'EX_for_e', 'EX_ac_e', 'EX_glc__D_e', 'BIOMASS_Ecoli_core_w_GAM', 'EX_pyr_e', 'EX_succ_e', 'biomass_EX', 'EX_etoh_e', 'H2Ot', 'EX_pi_e', 'EX_co2_e', 'EX_h_e', 'EX_o2_e']
+        #snd_ignored_idxs = ['EX_h2o_e', 'EX_nh4_e', 'EX_glu__L_e', 'EX_lac__D_e', 'EX_acald_e', 'EX_akg_e', 'biomass_ce', 'EX_for_e', 'EX_ac_e', 'EX_glc__D_e', 'BIOMASS_Ecoli_core_w_GAM', 'EX_pyr_e', 'EX_succ_e', 'biomass_EX', 'EX_etoh_e', 'H2Ot', 'EX_pi_e', 'EX_co2_e', 'EX_h_e', 'EX_o2_e']
 
         snd_ignored = [ self.model.reactions.index(self.model.reactions.get_by_id(x)) for x in snd_ignored_idxs ]
         print(snd_ignored)
@@ -152,7 +153,7 @@ class Preprocess:
         print(idx_constrained_old)
 
         self.drg0_prime_mean = drg0_prime_mean_init[idx_constrained_old]
-        self.drg0_prime_cov_sqrt = drg0_prime_cov_sqrt_init[idx_constrained_old, :][:, idx_constrained_old]
+        self.drg0_prime_cov_sqrt = drg0_prime_cov_sqrt_init[idx_constrained_old, :]#[:, idx_constrained_old]
         if drG0covfile is not None:
             self.drG0_prime_cov = drg0_prime_cov_init[idx_constrained_old, :][:, idx_constrained_old]
 

@@ -108,57 +108,6 @@ def find_dead_end_metabolites(model):
         print(x.id)
     return dead_ends
 
-def find_coupled_metabolites(model):
-    
-    tol = 1e-9
-
-    S = cobra.util.array.create_stoichiometric_matrix(model, array_type="DataFrame" )
-
-    proportional_rows = {}
-
-    for met_id in S.index:
-
-        row = S.loc[met_id].values
-
-        non_zeros = np.abs(row) > tol
-
-        if not np.any(non_zeros):
-            continue
-
-        indices = np.where(non_zeros)[0]
-        values = row[indices]
-
-        factor = values[0]
-        normalized_values = values / factor
-
-        row_hash = (tuple(indices), tuple(np.round(normalized_values, 6)))
-
-        if row_hash not in proportional_rows:
-            proportional_rows[row_hash] = []
-
-        proportional_rows[row_hash].append({'id': met_id, 'factor': factor})
-
-    coupling_map = {}
-
-    for hash, group in proportional_rows.items():
-        group_sorted = sorted(group, key=lambda x: x['id'])
-
-        representative = group_sorted[0]
-        
-        rep_id = representative['id']
-        rep_factor = representative['factor']
-
-        linked_mets = {}
-
-        for item in group_sorted[1:]:
-            ratio = item['factor'] / rep_factor
-            linked_mets[item['id']] = ratio
-
-        coupling_map[rep_id] = linked_mets
-
-    print(coupling_map)
-    return coupling_map
-
 def collapse_coupled_reactions(model, coupling_map):
     tol = 1e-9
     print(f"Excluding biomass, boundary reactions.")
@@ -191,7 +140,7 @@ def collapse_coupled_reactions(model, coupling_map):
                     rep_rxn.upper_bound, rxn.lower_bound / ratio
                 )
 
-            model.remove_reactions([rxn])
+            model.remove_reactions([rxn], remove_orphans=True)
 
     for r in model.reactions:
         if len(r.metabolites) == 0:
@@ -200,43 +149,82 @@ def collapse_coupled_reactions(model, coupling_map):
     print(f"Ended with {len(model.reactions)} reactions.")
     return model
 
-def collapse_coupled_metabolites(model, coupling_map):
-
-    print(f"Starting with {len(model.metabolites)} metabolites.")
-
-    dfg_dict = {met.id: getattr(met, 'dfG0prime') for met in model.metabolites}
-    new_dfg_dict = dict()
-
-    for rep_id, linked in coupling_map.items():
-
-        base_energy = float(dfg_dict[rep_id].m)
-        added_energy = 0.0
-
-        for linked_id, ratio in linked.items():
-            added_energy += ratio * float(dfg_dict[linked_id].m)
-        
-        new_dfg_dict[rep_id] = Q_(base_energy + added_energy, "kJ/M")
-        model.metabolites.get_by_id(rep_id).dfG0prime = new_dfg_dict[rep_id]
-
-    mets_to_remove = [model.metabolites.get_by_id(mid) for mid in linked.keys()]
-    model.remove_metabolites(mets_to_remove)
-
-    return model
+def find_cofactor_loops(model):
+    # Define groups of cofactors to "ignore" for the core stoichiometry
+    cofactor_ids = {
+        'nad_c', 'nadh_c', 'nadp_c', 'nadph_c', 
+        'q8_c', 'q8h2_c', 'mqn8_c', 'mqn8h2_c', 
+        'atp_c', 'adp_c', 'gtp_c', 'gdp_c', 'amp_c',
+        'h_c', 'h_e', 'pi_c', 'h2o_c' # Also ignore protons/water
+    }
     
-def compress_model_full(model):
+    diamond_groups = {}
+
+    for rxn in model.reactions:
+        # Ignore boundaries/biomass/exchange/transport
+        if rxn.boundary or "biomass" in rxn.id.lower() or len(rxn.metabolites) == 1 or len({m.compartment for m in rxn.metabolites}) > 1:
+            continue
+            
+        core = {}
+        for met, coeff in rxn.metabolites.items():
+            if met.id not in cofactor_ids:
+                core[met.id] = coeff
+        
+        if not core: continue # Skip reactions made ONLY of cofactors (like THD2)
+        
+        # Create a stable "signature"
+        signature = tuple(sorted(core.items()))
+        
+        if signature not in diamond_groups:
+            diamond_groups[signature] = []
+        diamond_groups[signature].append(rxn.id)
+
+    # Return only groups with multiple reactions (the diamonds)
+    return {sig: ids for sig, ids in diamond_groups.items() if len(ids) > 1}
+
+def collapse_all_loops(model, cofactor_loop_map):
+    for signature, rxn_ids in cofactor_loop_map.items():
+        # 1. Pick the first reaction as the 'Representative'
+        rep_rxn = model.reactions.get_by_id(rxn_ids[0])
+        others = rxn_ids[1:]
+        
+        print(f"Collapsing cofactor loop: {rxn_ids} -> Rep rxn: {rep_rxn.id}")
+        
+        for other_id in others:
+            other_rxn = model.reactions.get_by_id(other_id)
+            
+            # 2. Transfer capacity (Bounds)
+            # This ensures we don't reduce the maximum possible flux of the pathway
+            rep_rxn.lower_bound += other_rxn.lower_bound
+            rep_rxn.upper_bound += other_rxn.upper_bound
+
+
+            if rep_rxn.upper_bound > 100:
+                rep_rxn.upper_bound = 100
+            if rep_rxn.lower_bound < -100:
+                rep_rxn.lower_bound = -100
+            
+            # 3. Remove the redundant reaction
+            model.remove_reactions([other_rxn])
+            
+        balance = rep_rxn.check_mass_balance()
+        if balance: # Should be empty dict {}
+            print(f"Warning: {rep_rxn.id} is unbalanced after merge: {balance}")
+            
+    return model    
+
+def compress_model_full(model, remove_cofactor_loops = False):
 
     print("ONLY REACTIONS")
+
+    if remove_cofactor_loops:
+        cofactor_loops = find_cofactor_loops(model)
+        for x in cofactor_loops:
+            print(x)
+        model = collapse_all_loops(model, cofactor_loops)
+
     rxn_map = find_coupled_reactions(model)
     model = collapse_coupled_reactions(model, rxn_map)
-
-    # If enabled dont forget to assign dfG0 before this point
-    #met_map = find_coupled_metabolites(model)
-    #model = collapse_coupled_metabolites(model, met_map)
-
-    #dead_mets = find_dead_end_metabolites(model)
-    #model.remove_metabolites(dead_mets)
-
-    #print(f"Ended with {len(model.metabolites)} metabolites.")
 
     return model
 

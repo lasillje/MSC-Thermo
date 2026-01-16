@@ -5,6 +5,7 @@ from datetime import datetime
 from importlib.metadata import version
 import cobra
 import thermo_flux
+import scripts.metabolite_utils
 from thermo_flux.io import load_excel as ex
 from thermo_flux.core.model import ThermoModel
 from thermo_flux.tools.drg_tools import calc_dfG_transform
@@ -17,6 +18,7 @@ import gurobipy as gp
 from scripts.logger import write_to_log
 from gurobipy import GRB
 from cobra.flux_analysis import flux_variability_analysis
+from equilibrator_api import Q_
 
 CONDITIONS_REGRESS = ["WT-Glc_I", "WT-Gal_I", "WT-Fruc_I", "WT-Mann_I", "dptsG-Glc_I", "WT-Ace_I", "WT-Succ_I", "WT-Fum_I", "WT-Glyc_I", "WT-Pyr_I", "WT-GlyCAA_II"];
 
@@ -613,7 +615,7 @@ def gen_model(name: str, model_xlsx: str, kegg: str, reed: str, inchi:str, gams:
     return tmodel
 
 
-def apply_physio_data(tmodel, condition :str, input_exp: str, input_conc: str, input_metabolomics: str, input_gams: str, relax_flux_bounds, include_CO2: bool, include_O2: bool, allow_other_excr: bool, output_log: str, open_exchanges=False):
+def apply_physio_data(tmodel, condition :str, input_exp: str, input_conc: str, input_metabolomics: str, input_gams: str, relax_flux_bounds, include_CO2: bool, include_O2: bool, allow_other_excr: bool, output_log: str, open_exchanges=False, flux_limit = 100):
     "Apply regression to the Tmodel (not gurobi model) for FBA and blocked reaction analysis"
     df_conc = hl.excel_to_df(input_gams)["ConcLimits"]
 
@@ -677,6 +679,15 @@ def apply_physio_data(tmodel, condition :str, input_exp: str, input_conc: str, i
 
     met_data = pd.concat([met_data, df_missing])
 
+    met_data_all=pd.read_csv(input_metabolomics, index_col=(0,1))
+
+    df_bounds=thermo_flux.solver.gurobi.calc_conc_bounds(tmodel,[condition],met_data_all,conc_units='mM')
+    df_bounds_cond=df_bounds.loc[condition]
+    for met_id,row in df_bounds_cond.iterrows():
+        tmodel.metabolites.get_by_id(met_id).upper_bound=Q_(row['ub'],'M')
+        tmodel.metabolites.get_by_id(met_id).lower_bound=Q_(row['lb'],'M')
+        met = tmodel.metabolites.get_by_id(met_id)
+        print(met.lower_bound, met.upper_bound)
     # Store the indices of all reactions:
     map_rxn_id = {rxn.id: index for index, rxn in enumerate(tmodel.reactions)}
 
@@ -723,8 +734,8 @@ def apply_physio_data(tmodel, condition :str, input_exp: str, input_conc: str, i
 
     # Reset all flux bounds to +- 100:
     for rxn in tmodel.reactions:
-        tmodel.reactions.get_by_id(rxn.id).lower_bound = -100
-        tmodel.reactions.get_by_id(rxn.id).upper_bound = 100
+        tmodel.reactions.get_by_id(rxn.id).lower_bound = -flux_limit
+        tmodel.reactions.get_by_id(rxn.id).upper_bound = flux_limit
     
     # Add non-growth associate ATP maintenance cost:
     tmodel.reactions.ATPHYD.lower_bound = 3.15
@@ -741,8 +752,8 @@ def apply_physio_data(tmodel, condition :str, input_exp: str, input_conc: str, i
         
     # Relax essential exchanges:
     for rxn_rel in exchanges_to_relax:
-        tmodel.reactions.get_by_id(rxn_rel).lower_bound = -100
-        tmodel.reactions.get_by_id(rxn_rel).upper_bound = +100
+        tmodel.reactions.get_by_id(rxn_rel).lower_bound = -flux_limit
+        tmodel.reactions.get_by_id(rxn_rel).upper_bound = +flux_limit
 
     # Only allow secretion for carbon sources other than the current condition
     # Gets all exchange reactions for every condition and sets it to export only
@@ -765,8 +776,8 @@ def apply_physio_data(tmodel, condition :str, input_exp: str, input_conc: str, i
 
     # Fix flux for the measured exchange reactions:
     for rxn, row in reg_data.loc[condition].iterrows():
-        tmodel.reactions.get_by_id(rxn).lower_bound = -100
-        tmodel.reactions.get_by_id(rxn).upper_bound = 100
+        tmodel.reactions.get_by_id(rxn).lower_bound = -flux_limit
+        tmodel.reactions.get_by_id(rxn).upper_bound = flux_limit
 
         if not open_exchanges:
             tmodel.reactions.get_by_id(rxn).lower_bound = row["mean"] - relax_flux_bounds * row["sd"]
@@ -1028,3 +1039,57 @@ def run_optimization(tmodel, name: str, condition :str, input_exp: str, input_co
         tmodel.m.write(f"solutions{path.sep}{name}_{condition}_SOLUTION.sol")
 
     return tmodel
+
+
+def prepare_tfs_files(tmodel, name, condition, out_folder, use_base_fva_placeholder=False):
+    out_path_base = f"{out_folder}{path.sep}{name}_{condition}"
+    cobra.io.write_sbml_model(tmodel, f"{out_path_base}.sbml")
+
+    drg0_prime_mean = [r.drG0prime.m + r.drGtransport.m for r in tmodel.reactions]
+    drg0_cov_sqrt = tmodel._drG0_cov_sqrt
+    drg0_cov = drg0_cov_sqrt @ drg0_cov_sqrt.T
+
+    drgs = (drg0_prime_mean, drg0_cov_sqrt, drg0_cov)
+
+    log_dists = [scripts.metabolite_utils.conc_to_logdist(m.lower_bound.m, m.upper_bound.m, frac_of_area=0.8) for m in tmodel.metabolites]
+    conc_log_means = [x.log_mean for x in log_dists]
+    conc_log_cov = [np.square(x.log_std) for x in log_dists]
+
+    if use_base_fva_placeholder:
+        bounds = run_fva(tmodel, "")
+    else:
+        bounds = []
+        for r in tmodel.reactions:
+            bounds.append( (r.lower_bound, r.upper_bound) )
+
+    r_ids = [r.id for r in tmodel.reactions]
+
+    r_indices = [tmodel.reactions.index(r) for r in tmodel.reactions]
+    m_indices = [tmodel.metabolites.index(m) for m in tmodel.metabolites]
+
+    m_names = [m.id for m in tmodel.metabolites]
+    bounds_m = []
+
+    for m in tmodel.metabolites:
+        bounds_m.append((m.lower_bound.m, m.upper_bound.m))
+
+    conc_bounds_df = pd.DataFrame(data=bounds_m,index=m_names, columns=['lb', 'ub'])
+    conc_bounds_df.to_csv(f"{out_path_base}_lcb.csv")
+
+    flux_bounds_df = pd.DataFrame(data=bounds,index=r_ids, columns=['lb', 'ub'])
+    flux_bounds_df.to_csv(f"{out_path_base}_vbounds.csv")
+
+    drg0_prime_mean_df = pd.DataFrame(data=drgs[0], index=r_indices, columns=['0'])
+    drg0_cov_sqrt_df = pd.DataFrame(data=drgs[1])
+    drg0_cov_df = pd.DataFrame(data=drgs[2])
+
+    drg0_prime_mean_df.to_csv(f"{out_path_base}_drg0pm.csv")
+    drg0_cov_sqrt_df.to_csv(f"{out_path_base}_drg0cs.csv")
+
+    log_mean_df = pd.DataFrame(data=np.array(conc_log_means), index=m_indices, columns=['0'])
+    log_cov_df = pd.DataFrame(data=np.array(conc_log_cov), index=m_indices, columns=['0'])
+
+    log_mean_df.to_csv(f"{out_path_base}_lcm.csv")
+    log_cov_df.to_csv(f"{out_path_base}_lcv.csv")
+    
+    
