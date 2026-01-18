@@ -1,41 +1,20 @@
-from pathlib import Path
 import os.path as path
-from cobra.flux_analysis import find_blocked_reactions
-import cobra
-import thermo_flux
-import numpy as np
+
 from thermo_flux.core.model import ThermoModel
+from thermo_flux.solver.gurobi import variability_analysis
+from cobra.flux_analysis import find_blocked_reactions
+
 from scripts.logger import write_to_log
+
+from time import sleep
+
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns  # optional but nicer
-import scipy
+import seaborn as sns
 import requests
-import ast
-from time import sleep
-from thermo_flux.solver.gurobi import variability_analysis, variability_results, compute_IIS
-import enkie
-import pta
-from typing import Any, Dict, Tuple, Union
-from enkie.distributions import (
-    LogNormalDistribution,
-    LogUniformDistribution,
-    distribution_from_string,
-    distribution_to_string,
-)
-from enkie import CompartmentParameters
-from pta import ConcentrationsPrior
-import equilibrator_api
-Q = equilibrator_api.Q_
 
-from scripts.metabolite_utils import metabolite_to_bigg
-from scipy.stats import norm
+
 from scripts.gen_model import constrain_bounds_fva
-
-from scripts.metabolite_utils import apply_met_tva
-
-from scripts.fca.fca import find_coupled_reactions
-from scripts.fca.fca import validate_coupling
 
 def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1, open_exch = False):
     "Returns a list of blocked reactions. Does not remove the reactions from the model."
@@ -52,7 +31,7 @@ def list_blocked_reactions(tmodel, condition: str, output_log: str, processes = 
 
 def list_and_remove_blocked_reactions(tmodel, condition: str, output_log: str, processes = 1):
     b = list_blocked_reactions(tmodel, condition, output_log, 1)
-    tmodel.remove_reactions(b)
+    tmodel.remove_reactions(b, remove_orphans=True)
     for rxn in tmodel.reactions:
         thermo_flux.tools.drg_tools.reaction_balance(rxn, balance_charge=True, balance_mg=False)
     tmodel.update_thermo_info(fit_unknown_dfG0=True)
@@ -289,76 +268,6 @@ def tfva_run_scenarios_one_model_mets(tmodel, name, condition, output_folder, OU
     else:
         gm.write(f"{output_folder}{path.sep}{name}_{condition}_mets.mps.gz")
 
-def tfva_update_bounds(tmodel, condition, tfva_results_dir):
-
-    updated_rxns = set()
-
-    directory = Path(tfva_results_dir)
-    if not directory.exists():
-        raise FileNotFoundError(f"Directory not found: {directory}")
-
-    updated = 0
-    skipped = 0
-    not_found = 0
-
-    for filepath in directory.glob("*.txt"):
-        filename = filepath.name
-
-        if condition and condition not in filename:
-            continue
-
-        parts = filename.split("_")
-        if len(parts) < 5:
-            print(f"Skipping incorrect filename: {filename}")
-            skipped += 1
-            continue
-
-        rxn_id = parts[2]
-
-        try:
-            content = filepath.read_text().strip()
-            # Remove unused prefix
-            if ":" in content:
-                bounds_str = content.split(":", 1)[1]
-            else:
-                bounds_str = content
-
-            bounds = ast.literal_eval(bounds_str.strip())
-            if not (isinstance(bounds, (list, tuple)) and len(bounds) == 2):
-                raise ValueError("Not a [lb, ub] pair")
-            lb, ub = float(bounds[0]), float(bounds[1])
-
-        except Exception as e:
-            print(f"Failed to parse bounds in {filename}: {e}")
-            skipped += 1
-            continue
-
-        # Apply to model
-        if rxn_id not in tmodel.reactions:
-            print(f"Reaction not in model: {rxn_id} ({filename})")
-            not_found += 1
-            continue
-
-        rxn = tmodel.reactions.get_by_id(rxn_id)
-        old_lb, old_ub = rxn.lower_bound, rxn.upper_bound
-        rxn.lower_bound = lb
-        rxn.upper_bound = ub
-
-        print(f"{rxn_id}: [{old_lb: .6f}, {old_ub: .6f}] -> [{lb: .6f}, {ub: .6f}]")
-        updated += 1
-        updated_rxns.add(rxn_id)
-
-    print(f"\n=== TFVA Bounds Update Summary ===")
-    print(f"Updated: {updated} reactions")
-    print(f"Skipped/Malformed: {skipped}")
-    print(f"Reaction not found in model: {not_found}")
-    print(f"Total files processed: {updated + skipped + not_found}")
-    print(f"Reactions in model which were not found in results: \n")
-    missing_rxns = [x for x in tmodel.reactions if x not in updated_rxns]
-    print(missing_rxns)
-
-    return updated
-
 def count_blocked_pathways(reactions, name, condition, model_xlsx: str):
     "Counts and plots blocked pathways from a given list of blocked reactions and model xlsx file "
     df = pd.read_excel(model_xlsx, sheet_name="Reactions")
@@ -413,45 +322,3 @@ def count_blocked_pathways(reactions, name, condition, model_xlsx: str):
     plt.savefig(f"graphs{path.sep}blocked_rel_{name}_{condition}.svg")
 
     return
-
-
-def plot_calc_vs_exp(model_name: str, condition: str, sol_data: str, exp_data: str):
-
-    gurobi_df = pd.read_csv(sol_data)
-    exp_df = pd.read_csv(exp_data)
-
-    gurobi_fluxes = gurobi_df[['reaction', 'v']].copy()
-
-    exp_fluxes = exp_df[['cond', 'rxn', 'mean', 'sd']].copy()
-    exp_fluxes = exp_fluxes[exp_fluxes['cond'] == condition]
-
-    merged = pd.merge(exp_fluxes, gurobi_fluxes, left_on='rxn', right_on='reaction', how='inner')
-
-    plt.figure(figsize=(7,6))
-    ax = sns.scatterplot(
-        data=merged,
-        x='mean', 
-        y='v', 
-        hue='rxn',      # color by reaction
-        s=50,          # dot size
-        edgecolor='black'
-    )
-
-    plt.errorbar(
-        merged['mean'], merged['v'], 
-        xerr=merged['sd'], fmt='none', 
-        ecolor='gray', alpha=0.6
-    )
-
-    ax.axhline(0, color='black', lw=1)
-    ax.axvline(0, color='black', lw=1)
-    plt.xlim(-20, 20)
-    plt.ylim(-20, 20)
-    plt.grid(True, linestyle='--', alpha=0.5)
-    plt.xlabel("Measured flux (mean +/- sd)")
-    plt.ylabel("Predicted flux")
-    plt.title(f"Flux comparison for {condition}")
-    plt.legend(title="Reaction", bbox_to_anchor=(1.05, 1), loc='upper left')
-    plt.tight_layout()
-    plt.show()
-

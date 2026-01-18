@@ -125,11 +125,11 @@ def apply_met_tva(tmodel, met_tva_file):
 
         cur_lower, cur_upper = met.lower_bound, met.upper_bound
         new_lower, new_upper = bounds_dict[met_index][0], bounds_dict[met_index][1]
-
-        print(f"Metabolite {met.id} - Old: {cur_lower}, {cur_upper} | New: {new_lower, new_upper}")
     
         met.upper_bound = Q_(new_upper, "millimolar")
         met.lower_bound = Q_(new_lower, "millimolar")
+
+        print(f"Metabolite {met.id} - Old: {cur_lower}, {cur_upper} | New: {met.lower_bound, met.upper_bound}")
 
 def return_mets_tva(met_tva_file):
     bounds_dict = dict()

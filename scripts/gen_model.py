@@ -23,92 +23,9 @@ from equilibrator_api import Q_
 CONDITIONS_REGRESS = ["WT-Glc_I", "WT-Gal_I", "WT-Fruc_I", "WT-Mann_I", "dptsG-Glc_I", "WT-Ace_I", "WT-Succ_I", "WT-Fum_I", "WT-Glyc_I", "WT-Pyr_I", "WT-GlyCAA_II"];
 
 def gen_model_from_core(name: str, model_data: str, kegg: str, reed: str, inchi: str, gams: str, add_o2: bool, add_co2: bool, update_thermodynamics = True):
+   
     model = cobra.io.load_model('e_coli_core')
     tmodel = ThermoModel(model)
-
-    # # ADD HYDROXYBENZOATE TRANSPORT & EXCHANGE:
-
-    # # Define extracellular orotate:
-    # hbz_e = cobra.Metabolite(id="4hbz_e", compartment="e")
-    # hbz_e = thermo_flux.core.metabolite.ThermoMetabolite(hbz_e, model=tmodel)
-    # hbz_e.annotation = tmodel.metabolites.get_by_id("4hbz_c").annotation  
-    # tmodel.metabolites.append(hbz_e)
-
-    # # Hydroxybenzoate H+ antiporter (aaeB):
-    # HBZt3 = cobra.Reaction("HBZt3")
-    # HBZt3.lower_bound = -1000
-    # HBZt3.upper_bound = 1000
-    # HBZt3.add_metabolites({tmodel.metabolites.get_by_id("4hbz_e"): +1,
-    #                   tmodel.metabolites.h_e: -1,
-    #                   tmodel.metabolites.get_by_id("4hbz_c"): -1,
-    #                   tmodel.metabolites.h_c: +1})
-    # HBZt3 = thermo_flux.core.reaction.ThermoReaction(HBZt3, model=tmodel)
-
-    # # Exchange:
-    # EX_4hbz = cobra.Reaction("EX_4hbz")
-    # EX_4hbz.add_metabolites({tmodel.metabolites.get_by_id("4hbz_e"): -1})
-    # EX_4hbz = thermo_flux.core.reaction.ThermoReaction(EX_4hbz, model=tmodel)
-
-    # # Add reactions to the model
-    # tmodel.add_reactions([HBZt3, EX_4hbz])
-
-    # # ADD ISOPROPYLMALATE TRANSPORT & EXCHANGE:
-
-    # # Define extracellular orotate:
-    # ipm_e = cobra.Metabolite(id="3c3hmp_e", compartment="e")
-    # ipm_e = thermo_flux.core.metabolite.ThermoMetabolite(ipm_e, model=tmodel)
-    # ipm_e.annotation = tmodel.metabolites.get_by_id("3c3hmp_c").annotation  
-    # tmodel.metabolites.append(ipm_e)
-
-    # # Diffusion across the membrane:
-    # ipm_diff = cobra.Reaction("IPMex")
-    # ipm_diff.lower_bound = -1000
-    # ipm_diff.upper_bound = 1000
-    # ipm_diff.add_metabolites({tmodel.metabolites.get_by_id("3c3hmp_c"): -1,
-    #                         tmodel.metabolites.get_by_id("3c3hmp_e"): +1})
-    # ipm_diff = thermo_flux.core.reaction.ThermoReaction(ipm_diff, model=tmodel)
-
-
-    # # Exchange:
-    # EX_3c3hmp = cobra.Reaction("EX_3c3hmp")
-    # EX_3c3hmp.add_metabolites({tmodel.metabolites.get_by_id("3c3hmp_e"): -1})
-    # EX_3c3hmp = thermo_flux.core.reaction.ThermoReaction(EX_3c3hmp, model=tmodel)
-
-    # # Add reactions to the model
-    # tmodel.add_reactions([ipm_diff, EX_3c3hmp])
-
-
-    # # Define extracellular orotate:
-    # oro_e = cobra.Metabolite(id="orot_e", compartment="e")
-    # oro_e = thermo_flux.core.metabolite.ThermoMetabolite(oro_e, model=tmodel)
-    # oro_e.annotation = tmodel.metabolites.orot_c.annotation  
-    # tmodel.metabolites.append(oro_e)
-
-    # # Diffusion across the membrane:
-    # oro_diff = cobra.Reaction("OROTex")
-    # oro_diff.lower_bound = -1000
-    # oro_diff.upper_bound = 1000
-    # oro_diff.add_metabolites({tmodel.metabolites.orot_c: -1,
-    #                         tmodel.metabolites.orot_e: +1})
-    # oro_diff = thermo_flux.core.reaction.ThermoReaction(oro_diff, model=tmodel)
-
-    # # Dicarboxylate/H+ symporter (dctA):
-    # dcta = cobra.Reaction("DCTA")
-    # dcta.lower_bound = -1000
-    # dcta.upper_bound = 0
-    # dcta.add_metabolites({tmodel.metabolites.orot_e: +1,
-    #                     tmodel.metabolites.h_e: +1,
-    #                     tmodel.metabolites.orot_c: -1,
-    #                     tmodel.metabolites.h_c: -1})
-    # dcta = thermo_flux.core.reaction.ThermoReaction(dcta, model=tmodel)
-
-    # # Exchange:
-    # EX_oro = cobra.Reaction("EX_oro")
-    # EX_oro.add_metabolites({tmodel.metabolites.orot_e: -1})
-    # EX_oro = thermo_flux.core.reaction.ThermoReaction(EX_oro, model=tmodel)
-
-    # # Add reactions to the model
-    # tmodel.add_reactions([oro_diff, dcta, EX_oro])
 
     tmodel.pH = {"c": Q_(7.6), "e": Q_(7)} #pH
     tmodel.I = {"c": Q_(0.25,'M'), "e": Q_(0.25,'M')} #ionic stength
@@ -168,118 +85,14 @@ def gen_model_from_core(name: str, model_data: str, kegg: str, reed: str, inchi:
                 rxn.add_metabolites({tmodel.metabolites.h_e:2,
                                     tmodel.metabolites.h_c:-2})
 
-
-    RXNS_TO_REMOVE = []
-
-    for rxn in tmodel.reactions:
-        if rxn.id.endswith("_add"):
-            RXNS_TO_REMOVE.append(rxn)
-            print(f"Removing: {rxn.id}")
-    tmodel.remove_reactions(RXNS_TO_REMOVE)
-
-    # FDH reactions are missing protons and water is on wrong side of membrane 
-    # tmodel.reactions.FDH2.add_metabolites({tmodel.metabolites.h_e:2,
-    #                                     tmodel.metabolites.h_c:-2,
-    #                                     tmodel.metabolites.h2o_c:1,
-    #                                     tmodel.metabolites.h2o_e:-1})
-    # tmodel.reactions.FDH3.add_metabolites({tmodel.metabolites.h_e:2,
-    #                                     tmodel.metabolites.h_c:-2,
-    #                                     tmodel.metabolites.h2o_c:1,
-    #                                     tmodel.metabolites.h2o_e:-1})
-
-    # # Missing transporterd metabolites
-    # tmodel.reactions.TMAOR1e.transported_mets = {tmodel.metabolites.tmao_e: -1}
-    # tmodel.reactions.TMAOR2e.transported_mets = {tmodel.metabolites.tmao_e: -1}
-    # tmodel.reactions.GLCDe.transported_mets = {tmodel.metabolites.get_by_id('glc-D_e'): -1}
-
-    # #D MSOR1e protons are incorrect - this resets the reaction to the bigg version 
-    # tmodel.reactions.DMSOR1e.add_metabolites({tmodel.metabolites.h_e:-2,
-    #                                         tmodel.metabolites.h_c:2 })
-    # tmodel.reactions.DMSOR2e.add_metabolites({tmodel.metabolites.h_e:-2,
-    #                                         tmodel.metabolites.h_c:2 })
-
-    # tmodel.reactions.DMSOR1e.transported_mets = {tmodel.metabolites.dmso_e: -1}
-    # tmodel.reactions.DMSOR2e.transported_mets = {tmodel.metabolites.dmso_e: -1}
-
-    # tmodel.reactions.SHCHF.add_metabolites({tmodel.metabolites.scl_c:-1,
-    #                                         tmodel.metabolites.srch_c:1})
-
-    # # Sirohydrochlorin dehydrogenase is incorrectly defined in model 
-    # tmodel.reactions.SHCHD2.add_metabolites({tmodel.metabolites.scl_c:2,
-    #                                         tmodel.metabolites.srch_c:-2})
-
-    # #Update srch metabolite name
-    # tmodel.metabolites.srch_c.annotation = {'bigg.metabolite': 'dscl'}
-
-    # tmodel.reactions.NMNt7.transported_mets = {tmodel.metabolites.nmn_e:-1}
-
     # PTS mechanism 
     for rxn in tmodel.reactions:
         if 'pts' in rxn.id:
             rxn.transported_mets = {met:stoich for met, stoich in rxn.metabolites.items() if met.compartment == 'e'}
 
-    #in imported model any charge metabolite represents a free cation that is transported 
-    #for rxn in tmodel.reactions:
-    #    if 'biomass' not in rxn.id:   # ignore biomass reaction 
-    #        
-    #        transported_charge = {}
-    #        for met, stoich in rxn.metabolites.items():
-    #            if (met in tmodel.charge_dict.values()):
-    #                transported_charge[met.compartment] = stoich
-    #        
-    #        if len(transported_charge) != 0:
-    #            rxn.transported_charge = transported_charge
-
-    # Load default concentration bounds from the GAMS model:
-    #df_conc = hl.excel_to_df(gams)["ConcLimits"]
-
-    # Rearrange data for easier use:
-    #df_conc = df_conc.reset_index()
-    #df_conc["met"] = df_conc["dim1"] + "_"+ df_conc["dim2"]
-    #df_conc = df_conc.pivot_table(columns="dim3", values="Value", index="met")
-
-    # Change upper and lower concentration bounds the values in the dataframe df_conc (taken from GAMS)
-    # (values are in mM)
-    #met_ids = [m.id for m in tmodel.metabolites]
-
-    #for met, row in df_conc.iterrows():
-    #    if met in met_ids:
-    #        tmodel.metabolites.get_by_id(met).upper_bound = Q_(row["up"], "mM")
-    #        tmodel.metabolites.get_by_id(met).lower_bound = Q_(row["lo"], "mM")
-
-    # Find correct biomass reaction
     biomass_rxns = [r for r in tmodel.reactions if 'biomass' in r.id.lower()]
     for r in biomass_rxns:
         print(r.id, ":", r.reaction[:80])
-
-    # Correct reaction is 'biomass'
-    # Define the protons in biomass 
-    #tmodel.metabolites.biomass_c.formula = 'H74'  # estimated http://www.ncbi.nlm.nih.gov/pubmed/20506321
-    #tmodel.metabolites.biomass_e.formula = 'H74'
-
-    # Assign biomass
-    #tmodel.metabolites.biomass_c.biomass = True
-    #tmodel.metabolites.biomass_e.biomass = True
-
-    #tmodel.reactions.BIOMASS_Ecoli_core_w_GAM.add_metabolites({tmodel.metabolites.atp_c: -31.2622,
-    #                                            tmodel.metabolites.h2o_c: -31.2622,
-    #                                            tmodel.metabolites.adp_c: +31.2622,
-    #                                            tmodel.metabolites.pi_c:  +31.2622})
-
-
-    # Define biomass formation energy: dfG0(biomass) [kJ gCDW-1] = -2.692234848 fom Battley 1991
-    # structural UCFW = 24.190 Da (Battley 1991)
-    # dGf biomass: −65.10 kJ/C-mol (Battley 1991, referenced in DOI:10.3390/e22030277)
-    # dGf per gCDW = -2.69119470856
-
-    #energy_diff = calc_dfG_transform(tmodel.metabolites.biomass_e) - calc_dfG_transform(tmodel.metabolites.biomass_c)
-
-    #base_dfg = (Q_(-2.692234848, "kJ/mol") * 1000) # values in J/gDW 
-
-    #tmodel.metabolites.biomass_c.dfG0 = base_dfg
-    #tmodel.metabolites.biomass_e.dfG0 = base_dfg
-
-    #tmodel.reactions.biomass_ce.ignore_snd = True
 
     if update_thermodynamics:
         for rxn in tmodel.reactions:
@@ -293,10 +106,7 @@ def gen_model_from_core(name: str, model_data: str, kegg: str, reed: str, inchi:
         tmodel.update_thermo_info(fit_unknown_dfG0=True)
 
     return tmodel
-
-#def apply_physio_ecoli_core()
     
-
 def gen_model(name: str, model_xlsx: str, kegg: str, reed: str, inchi:str, gams: str, output_log: str, add_o2: bool, add_co2: bool, update_thermodynamics=True):
     "Generates a base Thermo-Flux model given the input files"
     tmodel = ex.create_thermo_model(name, model_excel=model_xlsx, keggids_csv=kegg, edit_mets={})
@@ -867,179 +677,6 @@ def run_fva(tmodel, output_log: str):
         bounds.append((lower_bound, upper_bound))
     return bounds
 
-def run_optimization(tmodel, name: str, condition :str, input_exp: str, input_conc: str, input_metabolomics: str, input_gams: str, output_log: str, include_CO2: bool, include_O2: bool, allow_other_excr: bool):
-
-    df_conc = hl.excel_to_df(input_gams)["ConcLimits"]
-
-    # Rearrange data for easier use:
-    df_conc = df_conc.reset_index()
-    df_conc["met"] = df_conc["dim1"] + "_"+ df_conc["dim2"]
-    df_conc = df_conc.pivot_table(columns="dim3", values="Value", index="met")
-
-    # Import experimental data:
-    reg_data = pd.read_csv(input_exp)
-    write_to_log(output_log, f"Reading experimental flux data: {input_exp}")
-
-    reg_data.set_index(["cond", "rxn"], inplace=True) 
-    #reg_data.head()
-
-    # Store gas fluxes:
-    reg_data_gas = reg_data.swaplevel().copy()
-    reg_data_gas = reg_data_gas.loc[["EX_co2", "EX_o2"]]
-    reg_data_gas = reg_data_gas.swaplevel()
-    #reg_data_gas
-
-    if include_CO2 is False:
-        reg_data_no_gas = reg_data.swaplevel().copy()
-        reg_data_no_gas = reg_data_no_gas.drop(["EX_co2"])
-        reg_data_no_gas = reg_data_no_gas.swaplevel()
-        reg_data = reg_data_no_gas
-        write_to_log(output_log, f" - ignoring CO2 data")
-        
-        
-    if include_O2 is False:
-        reg_data_no_gas = reg_data.swaplevel().copy()
-        reg_data_no_gas = reg_data_no_gas.drop(["EX_o2"]) 
-        reg_data_no_gas = reg_data_no_gas.swaplevel()
-        reg_data = reg_data_no_gas
-        write_to_log(output_log, f" - ignoring O2 data")
-
-    # Import experimental data:
-    conc_data = pd.read_csv(input_conc)
-    write_to_log(output_log, f"Reading experimental extracellular concentration data: {input_conc}")
-
-    conc_data.set_index(["cond", "met"], inplace=True) 
-    conc_data.head()
-
-    #Should probably change this to just the given condition..
-    volume_data = pd.DataFrame({cond: {"c": 1.0} for cond in CONDITIONS_REGRESS} ).T #specify the volume fractions for each condition
-    volume_data.head()
-
-    # Import experimental data:
-    write_to_log(output_log, f"Reading intracellular metabolite concentration data: {input_metabolomics}")
-    met_data = pd.read_csv(input_metabolomics)
-    met_data.set_index(["cond", "met"], inplace=True) 
-    met_data.head()
-
-    conds_with_data = list(met_data.reset_index().cond.unique())
-    missing_conds = [cond for cond in CONDITIONS_REGRESS if cond not in conds_with_data]
-
-    df_missing = pd.DataFrame({"cond": missing_conds, 
-                            "met": "g6p",   # code doesn't deal well if we type a non-existince met here...
-                            "mean": np.nan, 
-                            "sd": np.nan, }).set_index(["cond", "met"])
-
-    met_data = pd.concat([met_data, df_missing])
-
-    # Store the indices of all reactions:
-    map_rxn_id = {rxn.id: index for index, rxn in enumerate(tmodel.reactions)}
-
-    exchanges = [rxn.id for rxn in tmodel.exchanges]
-
-    exchanges_to_relax = ["EX_C", "EX_h", "EX_h2o", "EX_k", "EX_nh3", "EX_pi", "EX_so4"]
-
-    if include_CO2 is False:
-        exchanges_to_relax += ["EX_co2"]
-        
-    if include_O2 is False:
-        exchanges_to_relax += ["EX_o2"]
-
-    if allow_other_excr is True:
-        upper_bound_exchanges = 100
-    else:
-        upper_bound_exchanges = 0
-
-    settings_tfba = {"error_type": "covariance",
-                    "qnorm": 1,
-                    "alpha": 0.95, 
-                    "epsilon": 0.5,
-                    "nullspace": None,
-                    "gdiss_constraint": True,
-                    "sigmac_limit": 130}
-
-
-    settings_regression = {"flux_data": reg_data,
-                        "metabolite_data": met_data,
-                        "volume_data": volume_data,
-                        "conc_units": "mM",
-                        "conc_fit": False,
-                        "flux_fit": True,
-                        "drG_fit": True, 
-                        "resnorm": 1, 
-                        "error_type": "covariance"}
-
-    #Initialize model:
-    tmodel.m = None  # clear any previously build optimization models 
-    tmodel.objective = tmodel.reactions.biomass_EX      # needed, otherwise add_TFBA_variables() gives an error due to lack of an obj. function
-
-    # Add thermodynamics constraints
-    tmodel.add_TFBA_variables(conds=[condition], **settings_tfba) 
-
-    # Setup regression to experimental data:
-    tmodel.regression([condition], **settings_regression)
-    tmodel.m.update()
-
-    
-    # Display objective prior to adding RQ as an additional objective:
-#     print("Before: ", tmodel.m.getObjective())
-    write_to_log(output_log, f" - Objective function before: {tmodel.m.getObjective()}")
-    
-    
-    # Determine RQ for the given condition:
-    data_gas = reg_data_gas.loc[condition]
-    vo2, vo2_err = data_gas.loc["EX_o2"]
-    vco2, vco2_err = data_gas.loc["EX_co2"]
-    rq = - vco2 / vo2
-    rq_err = rq * np.sqrt( (vo2_err / vo2)**2 + (vco2_err / vco2)**2)
-    write_to_log(output_log, f" - RQ: {rq :.2} (vCO2 = {vco2 :.3} / vO2 = {vo2 :.3})")
-
-    
-    # Add new constraint - residual of RQ: 
-    resrq = tmodel.m.addMVar(lb=0, ub=GRB.INFINITY, shape=(1,1), name="resRQ") 
-    mrq = tmodel.m.addMVar(lb=0, ub=GRB.INFINITY, shape=(1,1), name="RQ") 
-    tmodel.mvars["resRQ"] = resrq
-    tmodel.mvars["rq"] = mrq
-    
-    tmodel.m.addConstr(tmodel.mvars["resRQ"][0, 0] >= ( (mrq - rq)/rq_err ), name = "resRQ_pos")
-    tmodel.m.addConstr(tmodel.mvars["resRQ"][0, 0] >= (-(mrq - rq)/rq_err ), name = "resRQ_neg")
-    
-    
-    # Impose RQ on the gas fluxes:
-    idx_o2 = map_rxn_id["EX_o2"]
-    idx_co2 = map_rxn_id["EX_co2"]   
-    tmodel.m.addConstr(tmodel.mvars["v"][0, idx_co2] == (-mrq)*tmodel.mvars["v"][0, idx_o2], name="enforce_RQ")
-    tmodel.m.update()
-
-    # Update objective function to include the new RQ constraint:
-    # (+ adjust weight of each term, giving equal weight to the RQ and each of the fluxes being fit)
-    no_fluxes = len(list(reg_data.unstack()["mean"].T.index) )
-    initial_weight = 1/no_fluxes
-    new_weight = 1/(no_fluxes + 1)   # to account for RQ constraint
-    
-    # Equal weight to RQ and resflx:
-    tmodel.m.setObjective(tmodel.m.getObjective() - initial_weight*tmodel.mvars["resflx"].sum() + new_weight*(resrq.sum() + tmodel.mvars["resflx"].sum()), GRB.MINIMIZE)
-    
-    write_to_log(output_log, f" - Objective function after: {tmodel.m.getObjective()}")
-    
-    # Write model for optimization on the HPC cluster:
-    # model_filename = f"{output_log}{path.sep}single_{CONDITION}_fit-co2-{INCLUDE_CO2}_fit-o2-{INCLUDE_O2}_allow-excretion-{ALLOW_OTHER_EXCRETION}.mps"
-    # tmodel.m.write(model_filename)
-    # write_to_log(output_log, f"Saved model to: {model_filename}")
-
-    tmodel.m.Params.TimeLimit = 3600
-    tmodel.m.Params.Threads = 16    
-    tmodel.m.optimize()
-    
-    try:
-        sols = tmodel.solution()
-        best_solution = sols[-1]
-        best_solution.to_csv(f"solutions{path.sep}{name}_{condition}_SOLUTION.csv")
-    except:
-        print("Failed to save solution to csv, falling back to Gurobi .sol output")
-        tmodel.m.write(f"solutions{path.sep}{name}_{condition}_SOLUTION.sol")
-
-    return tmodel
-
 
 def prepare_tfs_files(tmodel, name, condition, out_folder, use_base_fva_placeholder=False):
     out_path_base = f"{out_folder}{path.sep}{name}_{condition}"
@@ -1051,7 +688,7 @@ def prepare_tfs_files(tmodel, name, condition, out_folder, use_base_fva_placehol
 
     drgs = (drg0_prime_mean, drg0_cov_sqrt, drg0_cov)
 
-    log_dists = [scripts.metabolite_utils.conc_to_logdist(m.lower_bound.m, m.upper_bound.m, frac_of_area=0.8) for m in tmodel.metabolites]
+    log_dists = [scripts.metabolite_utils.conc_to_logdist(m.lower_bound.m, m.upper_bound.m, frac_of_area=0.95) for m in tmodel.metabolites]
     conc_log_means = [x.log_mean for x in log_dists]
     conc_log_cov = [np.square(x.log_std) for x in log_dists]
 

@@ -1,5 +1,4 @@
-"""Description of the space of thermodynamics-related quantities of a metabolic network.
-"""
+# UNUSED! TFS/PTA modifications are in scripts/tfs/
 
 import logging
 from typing import Dict, List, Optional, Set, Tuple, Union

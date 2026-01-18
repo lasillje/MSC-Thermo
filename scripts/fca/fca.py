@@ -150,18 +150,18 @@ def collapse_coupled_reactions(model, coupling_map):
     return model
 
 def find_cofactor_loops(model):
-    # Define groups of cofactors to "ignore" for the core stoichiometry
+
     cofactor_ids = {
         'nad_c', 'nadh_c', 'nadp_c', 'nadph_c', 
         'q8_c', 'q8h2_c', 'mqn8_c', 'mqn8h2_c', 
         'atp_c', 'adp_c', 'gtp_c', 'gdp_c', 'amp_c',
-        'h_c', 'h_e', 'pi_c', 'h2o_c' # Also ignore protons/water
+        'h_c', 'h_e', 'pi_c', 'h2o_c' 
     }
     
     diamond_groups = {}
 
     for rxn in model.reactions:
-        # Ignore boundaries/biomass/exchange/transport
+
         if rxn.boundary or "biomass" in rxn.id.lower() or len(rxn.metabolites) == 1 or len({m.compartment for m in rxn.metabolites}) > 1:
             continue
             
@@ -170,21 +170,18 @@ def find_cofactor_loops(model):
             if met.id not in cofactor_ids:
                 core[met.id] = coeff
         
-        if not core: continue # Skip reactions made ONLY of cofactors (like THD2)
+        if not core: continue 
         
-        # Create a stable "signature"
         signature = tuple(sorted(core.items()))
         
         if signature not in diamond_groups:
             diamond_groups[signature] = []
         diamond_groups[signature].append(rxn.id)
 
-    # Return only groups with multiple reactions (the diamonds)
     return {sig: ids for sig, ids in diamond_groups.items() if len(ids) > 1}
 
 def collapse_all_loops(model, cofactor_loop_map):
     for signature, rxn_ids in cofactor_loop_map.items():
-        # 1. Pick the first reaction as the 'Representative'
         rep_rxn = model.reactions.get_by_id(rxn_ids[0])
         others = rxn_ids[1:]
         
@@ -193,8 +190,6 @@ def collapse_all_loops(model, cofactor_loop_map):
         for other_id in others:
             other_rxn = model.reactions.get_by_id(other_id)
             
-            # 2. Transfer capacity (Bounds)
-            # This ensures we don't reduce the maximum possible flux of the pathway
             rep_rxn.lower_bound += other_rxn.lower_bound
             rep_rxn.upper_bound += other_rxn.upper_bound
 
@@ -204,11 +199,10 @@ def collapse_all_loops(model, cofactor_loop_map):
             if rep_rxn.lower_bound < -100:
                 rep_rxn.lower_bound = -100
             
-            # 3. Remove the redundant reaction
             model.remove_reactions([other_rxn])
             
         balance = rep_rxn.check_mass_balance()
-        if balance: # Should be empty dict {}
+        if balance: 
             print(f"Warning: {rep_rxn.id} is unbalanced after merge: {balance}")
             
     return model    

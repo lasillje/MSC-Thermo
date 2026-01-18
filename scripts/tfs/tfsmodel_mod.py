@@ -22,6 +22,7 @@ from pta.constants import (
 )
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 class SupTFSmodel(tfs.TFSModel):
     """Extended TFSModel with conveniences for the clustered sampler.
