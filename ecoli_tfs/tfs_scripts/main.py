@@ -15,6 +15,7 @@ from .preprocess import Preprocess
 from .thermospace_mod import ThermodynamicSpaceMod
 from .tbasis_mod import ThermodynamicSpaceBasismod
 from .tfsmodel_mod import SupTFSmodel
+from .pmo_mod import PmoProblemMod
 #from sampler import helper_sampling as hs
 
 def main(cobrafile, vbounds_file,
@@ -59,7 +60,7 @@ def main(cobrafile, vbounds_file,
         #ignoreconc_met_idx=prep.ignoreconc_met_idx,
     )
 
-    problem = pta.PmoProblem(prep.model, thermodynamic_space, tbasis, solver="GUROBI")
+    problem = PmoProblemMod(prep.model, thermodynamic_space, tbasis, solver="GUROBI")
 
     tfs_model = SupTFSmodel(prep.model, thermodynamic_space, tbasis, problem, solver=cp.GUROBI)
     #tfs_model.ignoreconc_met_idx = prep.ignoreconc_met_idx
