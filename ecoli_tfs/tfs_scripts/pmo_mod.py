@@ -472,19 +472,19 @@ class PmoProblemMod(pta.PmoProblem):
 
         # Thermodynamic space constraints.
         if self.confidence_level < 1.0:
-            #CI_square = chi2.ppf(self._confidence_level, self.B.dimensionality)
-            #self._m_constraint = (
-            #    cp.atoms.quad_form(self.m, np.identity(self.B.dimensionality))
-            #    <= CI_square
-            #)
+            CI_square = chi2.ppf(self._confidence_level, self.B.dimensionality)
+            self._m_constraint = (
+                cp.atoms.quad_form(self.m, np.identity(self.B.dimensionality))
+                <= CI_square
+            )
 
-            deg1_threshold = chi2.ppf(self._confidence_level, 1)
-            m_bound = np.sqrt(deg1_threshold)
+            #deg1_threshold = chi2.ppf(self._confidence_level, 1)
+            #m_bound = np.sqrt(deg1_threshold)
             
-            constraints = []
-            for index, m in enumerate(self._m):
-                print(index, m)
-                constraints += [(self._m[index] >= -m_bound), (self._m[index] <= m_bound)]
+            #constraints = []
+            #for index, m in enumerate(self._m):
+            #    print(index, m)
+            #    constraints += [(self._m[index] >= -m_bound), (self._m[index] <= m_bound)]
 
 
             # for i in m, m[i] <= m_bound and m[i] >= -mbound
@@ -492,11 +492,11 @@ class PmoProblemMod(pta.PmoProblem):
             #(self.m >= -m_bound),
             #(self.m <= m_bound)
             #]
-            self._m_constraint = constraints
+            #self._m_constraint = constraints
 
             self.thermo_constraints = self._m_constraint
 
-            self._constraints += self._m_constraint
+            self._constraints += [self._m_constraint]
 
 
     def add_rq_constraint(self, vo2, vo2_err, vco2, vco2_err, n_std=6):
