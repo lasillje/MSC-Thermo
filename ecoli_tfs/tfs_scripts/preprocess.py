@@ -58,6 +58,9 @@ class Preprocess:
         self.model = read_sbml_model(cobra_file)
         self.model.objective = self.model.reactions.biomass_EX
 
+        for x in self.model.reactions:
+            print(x.id, x.lower_bound, x.upper_bound)
+
         # Load drG0 info from provided files
         drg0_prime_mean_init = pd.read_csv(drG0file, index_col=0).values.T[0]
         drg0_prime_cov_sqrt_init = pd.read_csv(
@@ -114,7 +117,17 @@ class Preprocess:
         self.S = S
 
         # Reactions for which the second law is ignored (original indices)
+        # Restrict to FCA reactions
+        # ~45 points
         snd_ignored_idxs = ['biomass_EX', 'EX_o2', 'biomass_ce', 'EX_ac', 'biomass', 'EX_so4', 'EX_oro', 'H2Ot', 'EX_pi', 'EX_nh3', 'EX_co2', 'EX_h', 'EX_glc', 'EX_h2o']
+        
+        snd_not_involved = [x.id for x in self.model.reactions if x.upper_bound > 90 or x.lower_bound < -90]
+        print(snd_not_involved)
+
+        snd_ignored_idxs += snd_not_involved
+        print(snd_ignored_idxs)
+        print(len(snd_ignored_idxs))
+        
         #snd_ignored_idxs = [x.id for x in self.model.reactions if "biomass" in x.id or "EX_" in x.id or "BIOMASS" in x.id]
         #snd_ignored_idxs = ['EX_h2o_e', 'EX_nh4_e', 'EX_glu__L_e', 'EX_lac__D_e', 'EX_acald_e', 'EX_akg_e', 'biomass_ce', 'EX_for_e', 'EX_ac_e', 'EX_glc__D_e', 'BIOMASS_Ecoli_core_w_GAM', 'EX_pyr_e', 'EX_succ_e', 'biomass_EX', 'EX_etoh_e', 'H2Ot', 'EX_pi_e', 'EX_co2_e', 'EX_h_e', 'EX_o2_e']
 
@@ -132,21 +145,27 @@ class Preprocess:
         self.rid_constrained = [self.model.reactions[idx].id for idx in range(len(self.model.reactions)) if idx not in snd_ignored_newidx]
 
         # ---- Load concentration priors ----
+
+        if lncbounds_file is not None:
+            bounds_lnconc = pd.read_csv(lncbounds_file, index_col=0).loc[[m.id for m in self.model.metabolites]]
+            ignore_met_id = bounds_lnconc[bounds_lnconc["lb"] > 900].index
+            ignoreconc_met_idx = [self.model.metabolites.index(met_id) for met_id in ignore_met_id]
+            self.ignoreconc_met_idx = ignoreconc_met_idx
+
+
         log_conc_mean = pd.read_csv(logconcmean_file, index_col=0)["0"].values
         log_conc_var = pd.read_csv(logconcvar_file, index_col=0)["0"].values
+
+        log_conc_mean = [x for i, x in enumerate(log_conc_mean) if i not in self.ignoreconc_met_idx]
+        log_conc_var = [x for i, x in enumerate(log_conc_var) if i not in self.ignoreconc_met_idx]
+
         log_conc_cov = np.diag(log_conc_var)
+        
         self.log_conc_cov = log_conc_cov
         self.log_conc_mean = log_conc_mean
 
         print(len(self.log_conc_mean), self.log_conc_mean)
         print(len(self.log_conc_cov), self.log_conc_cov)
-
-        # Detect metabolites with fixed concentration (lb == ub in TVA bounds)
-        if lncbounds_file is not None:
-            bounds_lnconc = pd.read_csv(lncbounds_file, index_col=0).loc[[m.id for m in self.model.metabolites]]
-            ignore_met_id = bounds_lnconc[bounds_lnconc["ub"] - bounds_lnconc["lb"] == 0].index
-            ignoreconc_met_idx = [self.model.metabolites.index(met_id) for met_id in ignore_met_id]
-            self.ignoreconc_met_idx = ignoreconc_met_idx
 
         # ---- Load drG'° statistics restricted to constrained reactions ----
         idx_constrained_old = [

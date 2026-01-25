@@ -134,8 +134,8 @@ class PmoProblemMod(pta.PmoProblem):
         self._objective = objective or (
             lambda p: cp.Minimize(
                 #cp.atoms.quad_form(p.m, np.identity(p.B.dimensionality))
-                #cp.atoms.quad_form(p.m, np.identity(p.B.dimensionality))
-                cp.atoms.norm(p.m, 1)
+                cp.atoms.quad_form(p.m, np.identity(p.B.dimensionality))
+                #cp.atoms.norm(p.m, 1)
             )
         )
 
@@ -166,13 +166,13 @@ class PmoProblemMod(pta.PmoProblem):
     @property
     def objective(
         self,
-    ) -> Optional[Callable[["PmoProblem"], cp.problems.objective.Objective]]:
+    ) -> Optional[Callable[["PmoProblemMod"], cp.problems.objective.Objective]]:
         """Gets the function that constructs the PMO objective."""
         return self._objective
 
     @objective.setter
     def objective(
-        self, value: Callable[["PmoProblem"], cp.problems.objective.Objective]
+        self, value: Callable[["PmoProblemMod"], cp.problems.objective.Objective]
     ):
         """Sets the function that constructs the PMO objective."""
         self._objective = value
@@ -313,7 +313,7 @@ class PmoProblemMod(pta.PmoProblem):
 
         return self._problem.status
 
-    def rebuild_for_directions(self, directions: np.ndarray) -> "PmoProblem":
+    def rebuild_for_directions(self, directions: np.ndarray) -> "PmoProblemMod":
         """Construct a copy of this PMO problem constrained to the given reaction
         directions.
 
@@ -353,7 +353,7 @@ class PmoProblemMod(pta.PmoProblem):
         constrained_F.lb[reaction_idxs] = new_lb
         constrained_F.ub[reaction_idxs] = new_ub
 
-        return PmoProblem(
+        return PmoProblemMod(
             constrained_F,
             self.T,
             self.B,
@@ -472,28 +472,37 @@ class PmoProblemMod(pta.PmoProblem):
 
         # Thermodynamic space constraints.
         if self.confidence_level < 1.0:
-            CI_square = chi2.ppf(self._confidence_level, self.B.dimensionality)
-            self._m_constraint = (
-                cp.atoms.quad_form(self.m, np.identity(self.B.dimensionality))
-                <= CI_square
-            )
-            #deg1_threshold = chi2.ppf(self._confidence_level, 1)
-            #m_bound = np.sqrt(deg1_threshold)
+            #CI_square = chi2.ppf(self._confidence_level, self.B.dimensionality)
+            #self._m_constraint = (
+            #    cp.atoms.quad_form(self.m, np.identity(self.B.dimensionality))
+            #    <= CI_square
+            #)
+
+            deg1_threshold = chi2.ppf(self._confidence_level, 1)
+            m_bound = np.sqrt(deg1_threshold)
+            
+            constraints = []
+            for index, m in enumerate(self._m):
+                print(index, m)
+                constraints += [(self._m[index] >= -m_bound), (self._m[index] <= m_bound)]
+
+
+            # for i in m, m[i] <= m_bound and m[i] >= -mbound
             #self._m_constraint = [
             #(self.m >= -m_bound),
             #(self.m <= m_bound)
             #]
-            
+            self._m_constraint = constraints
+
             self.thermo_constraints = self._m_constraint
 
-            self._constraints += [self._m_constraint]
+            self._constraints += self._m_constraint
 
 
     def add_rq_constraint(self, vo2, vo2_err, vco2, vco2_err, n_std=6):
         """
         Adds a linear respiratory quotient constraint to the PMO problem.
         """
-        # 1. Calculate RQ and the error propagation
         rq = - vco2 / vo2
         rq_err = rq * np.sqrt((vo2_err / vo2)**2 + (vco2_err / vco2)**2)
         
@@ -503,7 +512,7 @@ class PmoProblemMod(pta.PmoProblem):
         idx_o2 = self.F.reaction_ids.index("EX_o2")
         idx_co2 = self.F.reaction_ids.index("EX_co2")
 
-        ratio = self.flux_scale[idx_co2] / self.flux_scale[idx_o2]
+        ratio = self.flux_scale[idx_co2] / self.flux_scale[idx_o2] 
 
         coeff_lb = rq_lb * ratio[0]
         coeff_ub = rq_ub * ratio[0]
@@ -516,7 +525,6 @@ class PmoProblemMod(pta.PmoProblem):
         ]
         
         print(f"added rq constraint: {self._rq_constraints}")
-        print(f"rebuilt cvxpy problem")
         print(f"Constraints before rq: {len(self._constraints)}")
         self._constraints += self._rq_constraints
         print(f"Constraints after rq: {len(self._constraints)}")

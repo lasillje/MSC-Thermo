@@ -36,6 +36,8 @@ def main(cobrafile, vbounds_file,
         drG0file,
         drGcovfile,
     )
+    # Check TFVA bounds applied
+    # Ignore conc/met important
 
     #if sector_dict is not None:
     #   hs.set_sector_flux(prep.model, sector_dict)
@@ -57,12 +59,12 @@ def main(cobrafile, vbounds_file,
         explicit_drg=True,
         min_eigenvalue=1e-10,
         ranktol=ranktol,
-        #ignoreconc_met_idx=prep.ignoreconc_met_idx,
+        ignoreconc_met_idx=prep.ignoreconc_met_idx,
     )
 
     problem = PmoProblemMod(prep.model, thermodynamic_space, tbasis, solver="GUROBI")
 
     tfs_model = SupTFSmodel(prep.model, thermodynamic_space, tbasis, problem, solver=cp.GUROBI)
-    #tfs_model.ignoreconc_met_idx = prep.ignoreconc_met_idx
+    tfs_model.ignoreconc_met_idx = prep.ignoreconc_met_idx
 
     return tfs_model
