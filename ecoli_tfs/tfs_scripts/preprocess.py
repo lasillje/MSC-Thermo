@@ -120,10 +120,14 @@ class Preprocess:
         # Reactions for which the second law is ignored (original indices)
         # Restrict to FCA reactions
         # ~45 points
+        base_restrained = ['biomass_EX', 'EX_o2', 'biomass_ce', 'EX_ac', 'biomass', 'EX_so4', 'EX_oro', 'H2Ot', 'EX_pi', 'EX_nh3', 'EX_co2', 'EX_h', 'EX_glc', 'EX_h2o']
+
         if restrained_rxns is not None:
             snd_ignored_idxs = restrained_rxns
+            snd_ignored_idxs += base_restrained
+            snd_ignored_idxs = list(set(snd_ignored_idxs))
         else:
-            snd_ignored_idxs = ['biomass_EX', 'EX_o2', 'biomass_ce', 'EX_ac', 'biomass', 'EX_so4', 'EX_oro', 'H2Ot', 'EX_pi', 'EX_nh3', 'EX_co2', 'EX_h', 'EX_glc', 'EX_h2o']
+            snd_ignored_idxs = base_restrained
         
         #snd_not_involved = [x.id for x in self.model.reactions if x.upper_bound > 90 or x.lower_bound < -90]
         

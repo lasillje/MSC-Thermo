@@ -20,7 +20,7 @@ from .pmo_mod import PmoProblemMod
 
 def main(cobrafile, vbounds_file,
          logconcmean_file, logconcvar_file, lncbounds_file,
-         drG0file, drGcovfile, ranktol=1e-5, restrained_rxns=None, sector_dict=None):
+         drG0file, drGcovfile, ranktol=1e-5, restrained_rxns=None, linear_constraitns=False, sector_dict=None):
     """Create and return a configured SupTFSmodel.
 
     Parameters match those of the original script. The returned object is ready
@@ -63,7 +63,7 @@ def main(cobrafile, vbounds_file,
         ignoreconc_met_idx=prep.ignoreconc_met_idx,
     )
 
-    problem = PmoProblemMod(prep.model, thermodynamic_space, tbasis, solver="GUROBI")
+    problem = PmoProblemMod(prep.model, thermodynamic_space, tbasis, linear_constraints=linear_constraitns, solver="GUROBI")
 
     tfs_model = SupTFSmodel(prep.model, thermodynamic_space, tbasis, problem, solver=cp.GUROBI)
     tfs_model.ignoreconc_met_idx = prep.ignoreconc_met_idx

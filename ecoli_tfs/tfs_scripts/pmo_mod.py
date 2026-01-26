@@ -74,7 +74,10 @@ class PmoProblemMod(pta.PmoProblem):
         max_drg: float = default_max_drg,
         solver: Optional[str] = None,
         solver_options: dict = None,
+        linear_constraints = False
     ):
+        
+        self.linear_constraints = linear_constraints
         # Create the flux space if needed.
         if isinstance(network, FluxSpace):
             self._F = network.copy()
@@ -472,19 +475,25 @@ class PmoProblemMod(pta.PmoProblem):
 
         # Thermodynamic space constraints.
         if self.confidence_level < 1.0:
-            CI_square = chi2.ppf(self._confidence_level, self.B.dimensionality)
-            self._m_constraint = (
-                cp.atoms.quad_form(self.m, np.identity(self.B.dimensionality))
-                <= CI_square
-            )
+            if not self.linear_constraints:
+                CI_square = chi2.ppf(self._confidence_level, self.B.dimensionality)
+                self._m_constraint = (
+                    cp.atoms.quad_form(self.m, np.identity(self.B.dimensionality))
+                    <= CI_square
+                )
+                        
+                self.thermo_constraints = self._m_constraint
+                self._constraints += [self._m_constraint]
+            else:
+                deg1_threshold = chi2.ppf(self._confidence_level, 1)
+                m_bound = np.sqrt(deg1_threshold)
+                
+                m_constraints = []
+                for index, m in enumerate(self._m):
+                    m_constraints += [(self._m[index] >= -m_bound), (self._m[index] <= m_bound)]
 
-            #deg1_threshold = chi2.ppf(self._confidence_level, 1)
-            #m_bound = np.sqrt(deg1_threshold)
-            
-            #constraints = []
-            #for index, m in enumerate(self._m):
-            #    print(index, m)
-            #    constraints += [(self._m[index] >= -m_bound), (self._m[index] <= m_bound)]
+                self._m_constraint = m_constraints
+                self._constraints += m_constraints
 
 
             # for i in m, m[i] <= m_bound and m[i] >= -mbound
@@ -493,10 +502,6 @@ class PmoProblemMod(pta.PmoProblem):
             #(self.m <= m_bound)
             #]
             #self._m_constraint = constraints
-
-            self.thermo_constraints = self._m_constraint
-
-            self._constraints += [self._m_constraint]
 
 
     def add_rq_constraint(self, vo2, vo2_err, vco2, vco2_err, n_std=6):
