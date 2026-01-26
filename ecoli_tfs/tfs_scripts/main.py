@@ -20,7 +20,7 @@ from .pmo_mod import PmoProblemMod
 
 def main(cobrafile, vbounds_file,
          logconcmean_file, logconcvar_file, lncbounds_file,
-         drG0file, drGcovfile, ranktol=1e-5, sector_dict=None):
+         drG0file, drGcovfile, ranktol=1e-5, restrained_rxns=None, sector_dict=None):
     """Create and return a configured SupTFSmodel.
 
     Parameters match those of the original script. The returned object is ready
@@ -35,6 +35,7 @@ def main(cobrafile, vbounds_file,
         lncbounds_file,
         drG0file,
         drGcovfile,
+        restrained_rxns=restrained_rxns
     )
     # Check TFVA bounds applied
     # Ignore conc/met important

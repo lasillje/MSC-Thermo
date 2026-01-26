@@ -50,6 +50,7 @@ class Preprocess:
         lncbounds_file,
         drG0file,
         drGcovsqrtfile,
+        restrained_rxns=None,
         drG0covfile=None,
     ):
         if vbound_file is not None:
@@ -119,12 +120,17 @@ class Preprocess:
         # Reactions for which the second law is ignored (original indices)
         # Restrict to FCA reactions
         # ~45 points
-        snd_ignored_idxs = ['biomass_EX', 'EX_o2', 'biomass_ce', 'EX_ac', 'biomass', 'EX_so4', 'EX_oro', 'H2Ot', 'EX_pi', 'EX_nh3', 'EX_co2', 'EX_h', 'EX_glc', 'EX_h2o']
+        if restrained_rxns is not None:
+            snd_ignored_idxs = restrained_rxns
+        else:
+            snd_ignored_idxs = ['biomass_EX', 'EX_o2', 'biomass_ce', 'EX_ac', 'biomass', 'EX_so4', 'EX_oro', 'H2Ot', 'EX_pi', 'EX_nh3', 'EX_co2', 'EX_h', 'EX_glc', 'EX_h2o']
         
-        snd_not_involved = [x.id for x in self.model.reactions if x.upper_bound > 90 or x.lower_bound < -90]
-        print(snd_not_involved)
+        #snd_not_involved = [x.id for x in self.model.reactions if x.upper_bound > 90 or x.lower_bound < -90]
+        
+        #print(snd_not_involved)
 
-        snd_ignored_idxs += snd_not_involved
+        #snd_ignored_idxs += snd_not_involved
+        
         print(snd_ignored_idxs)
         print(len(snd_ignored_idxs))
         
