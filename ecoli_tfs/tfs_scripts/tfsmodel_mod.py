@@ -109,7 +109,7 @@ class SupTFSmodel(tfs.TFSModel):
             self.make_sampling_result_function,
             points_array,
             self.max_steps,
-             default_max_psrf
+            default_max_psrf
         )
         maxpsrf = np.max(result.psrf)
         logger.info("Sampling converged: %s (max psrf=%.3f)", maxpsrf < 1.1, maxpsrf)
