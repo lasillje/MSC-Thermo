@@ -8432,13 +8432,13 @@
       <parameter sboTerm="SBO:0000625" id="R_AACPS4_upper_bound" value="13.9866902531943" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_AACPS5_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_AACPS5_upper_bound" value="99.9049303799592" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_ABTA_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_ABTA_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_ABTA_lower_bound" value="-0.0294789519508071" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_ABTA_upper_bound" value="99.3170608535056" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ABUTD_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ABUTD_upper_bound" value="99.9705210480494" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACALDi_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACALDi_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_ACCOACr_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_ACCOACr_lower_bound" value="-91.8883694621968" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACCOACr_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACCOAL_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACCOAL_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -8452,12 +8452,11 @@
       <parameter sboTerm="SBO:0000625" id="R_ACLS_upper_bound" value="0.58260165184132" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACOATA_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACOATA_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_ACODA_lower_bound" value="1" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACODA_upper_bound" value="91.0186696369783" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACONT_lower_bound" value="-18.7027379442475" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACONT_upper_bound" value="91.0773077758658" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACOTA_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_ACOTA_upper_bound" value="-0.1" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_ACOTA_upper_bound" value="-0.001" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACS_lower_bound" value="-12.8346632258583" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACS_upper_bound" value="90.9726683537965" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ADA_upper_bound" value="98.1601023355149" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -8578,7 +8577,6 @@
       <parameter sboTerm="SBO:0000625" id="R_CAT_upper_bound" value="23.4931714331011" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_CBMK_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_CBMK_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_CBPS_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_CBPS_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_CDAPPAEC_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_CDAPPAEC_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -8589,8 +8587,7 @@
       <parameter sboTerm="SBO:0000625" id="R_CITL_upper_bound" value="99.914732536189" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_CLPNSEC_lower_bound" value="0.0043269140157135" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_CLPNSEC_upper_bound" value="0.0045271247638777" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_CMPN_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_CMPN_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_CMPN_upper_bound" value="99.7980773459332" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_CS_lower_bound" value="-20.1175354295945" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_CS_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_CSND_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -8600,8 +8597,7 @@
       <parameter sboTerm="SBO:0000625" id="R_CYSS_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_CYSTL_lower_bound" value="0.0979425498132258" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_CYSTL_upper_bound" value="0.102474452019507" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_cytd_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_cytd_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_cytd_upper_bound" value="99.7980773459331" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_CYTDK2_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_CYTDK2_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_CYTK1_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -8623,8 +8619,7 @@
       <parameter sboTerm="SBO:0000625" id="R_DASYNEC_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_DB4PS_lower_bound" value="1.34167876456509e-05" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_DB4PS_upper_bound" value="1.40375961672733e-05" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_DCTPD_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_DCTPD_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_DCTPD_upper_bound" value="99.5765324391832" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_DCYTD_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_DCYTD_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_DDPA_lower_bound" value="0.275714986117961" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -8686,9 +8681,7 @@
       <parameter sboTerm="SBO:0000625" id="R_DURIPP_upper_bound" value="99.7644682928806" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_DUTPDP_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_DUTPDP_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_EDA_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_EDA_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_EDD_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_EDD_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_EDTXS1_lower_bound" value="0.0056350508111679" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_EDTXS1_upper_bound" value="0.0058957903902148" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -8915,13 +8908,13 @@
       <parameter sboTerm="SBO:0000625" id="R_MACPD_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MALS_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MALS_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_MCITD_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_MCITD_lower_bound" value="-0.193718827105258" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MCITD_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_MCITL2_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_MCITL2_lower_bound" value="-0.193718828170887" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MCITL2_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_MCITS_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_MCITS_lower_bound" value="-0.193718827105258" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MCITS_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_MCOATA_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_MCOATA_lower_bound" value="-91.8883696072546" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MCOATA_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MDH_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MDH_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -8940,7 +8933,7 @@
       <parameter sboTerm="SBO:0000625" id="R_METS_upper_bound" value="0.102474452019507" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MGSA_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MGSA_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_MICITD_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_MICITD_lower_bound" value="-0.193718828170887" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MICITD_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MLTG2_lower_bound" value="-98.961410937847" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MLTG2_upper_bound" value="91.291204448965" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -8972,7 +8965,7 @@
       <parameter sboTerm="SBO:0000625" id="R_MTAN_upper_bound" value="0.0049131586584678" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MTHFC_lower_bound" value="-99.2793722604432" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MTHFC_upper_bound" value="99.9609213767954" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_MTHFD_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_MTHFD_lower_bound" value="-98.8829124587795" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MTHFD_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MTHFR2_lower_bound" value="0.13148451892728" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_MTHFR2_upper_bound" value="0.137568443382654" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -8994,8 +8987,8 @@
       <parameter sboTerm="SBO:0000625" id="R_NADPPPS_upper_bound" value="99.9996444173719" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_NADS1_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_NADS1_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_NAMNPP_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_NAMNPP_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_NAMNPP_lower_bound" value="-0.0019161713792925" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_NAMNPP_upper_bound" value="99.9986434371229" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_NDPK1_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_NDPK1_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_NDPK2_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -9060,8 +9053,8 @@
       <parameter sboTerm="SBO:0000625" id="R_NTPP7_upper_bound" value="99.9826635687338" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_NTPP8_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_NTPP8_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_NTPTP1_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_NTPTP1_upper_bound" value="99.98296067969" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_NTPTP1_lower_bound" value="-99.065567598359" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_NTPTP1_upper_bound" value="99.0648607218599" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_NTPTP2_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_NTPTP2_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_OBTFL_lower_bound" value="-96.0158901917383" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -9131,7 +9124,6 @@
       <parameter sboTerm="SBO:0000625" id="R_ppa_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_PPAKr_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_PPAKr_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_PPC_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_PPC_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_PPCDC_lower_bound" value="3.95795235547114e-05" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_PPCDC_upper_bound" value="4.14109086928072e-05" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -9252,8 +9244,7 @@
       <parameter sboTerm="SBO:0000625" id="R_SDPTA_upper_bound" value="-0.237208805575108" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_SERAT_lower_bound" value="-99.8364205937461" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_SERAT_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_SERDL_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_SERDL_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_SERDL_upper_bound" value="99.4411009020821" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_SGDS_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_SGDS_upper_bound" value="99.8027717738541" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_SGSAD_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -9316,14 +9307,12 @@
       <parameter sboTerm="SBO:0000625" id="R_TREHe_lower_bound" value="-6.07442777438376" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_TRPAS1_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_TRPAS1_upper_bound" value="99.8364205937461" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_TRPAS2_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_TRPAS2_lower_bound" value="-0.0379015096510357" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_TRPAS2_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_TRPS1_lower_bound" value="-99.9620984903492" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_TRPS1_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_TRPS2_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_TRPS2_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_TRPS3_lower_bound" value="-99.9620984903492" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_TRPS3_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_TRPS2_upper_bound" value="99.9921289602872" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_TRPS3_lower_bound" value="-99.9637746733568" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_TRPS3_upper_bound" value="0.0379015096510357" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_TRSAR_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_TRSAR_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_TYRTA_lower_bound" value="-0.0919462548936849" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -9422,14 +9411,12 @@
       <parameter sboTerm="SBO:0000625" id="R_CYTBO3_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_FDH2_upper_bound" value="47.1714979074161" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_FDH3_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_FDH3_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_FDH3_upper_bound" value="89.9709872830552" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_FORt_lower_bound" value="-86.8574404552683" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_FORt_upper_bound" value="90.401564550288" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_FUMt22_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_GALabc_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_GALabc_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_GALt2_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_GALt2_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_GLCDe_upper_bound" value="9.53122830580934" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_GLCNt2r_upper_bound" value="9.53122830580928" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_GLCpts_upper_bound" value="12.1488555487676" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -9442,10 +9429,8 @@
       <parameter sboTerm="SBO:0000625" id="R_GLUt2r_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_GLUt4_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_GLUt4_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_GLYBabc_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_GLYBabc_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_GLYBt2r_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_GLYBt2r_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_GLYBt2r_lower_bound" value="-99.211557527793" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_GLYC3Pabc_upper_bound" value="0.669759682683048" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_GLYC3Pt6_lower_bound" value="-0.669759682683125" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_H2Ot_lower_bound" value="-91.8027402225811" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -9517,10 +9502,8 @@
       <parameter sboTerm="SBO:0000625" id="R_THRt4_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_THRt4_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_TREpts_upper_bound" value="6.07442777438376" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_VALabc_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_VALabc_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_VALabc_upper_bound" value="99.0972232595207" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_VALt2r_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_VALt2r_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_XYLabc_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_XYLabc_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_XYLt2_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -9775,7 +9758,7 @@
           <speciesReference species="M_coa_c" stoichiometry="1" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_ACODA" reversible="false" fast="false" fbc:lowerFluxBound="R_ACODA_lower_bound" fbc:upperFluxBound="R_ACODA_upper_bound">
+      <reaction id="R_ACODA" reversible="false" fast="false" fbc:lowerFluxBound="cobra_0_bound" fbc:upperFluxBound="R_ACODA_upper_bound">
         <listOfReactants>
           <speciesReference species="M_acorn_c" stoichiometry="1" constant="true"/>
           <speciesReference species="M_h2o_c" stoichiometry="1" constant="true"/>
@@ -10520,7 +10503,7 @@
           <speciesReference species="M_h_c" stoichiometry="1.89205700187328" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_CBPS" reversible="true" fast="false" fbc:lowerFluxBound="R_CBPS_lower_bound" fbc:upperFluxBound="R_CBPS_upper_bound">
+      <reaction id="R_CBPS" reversible="false" fast="false" fbc:lowerFluxBound="cobra_0_bound" fbc:upperFluxBound="R_CBPS_upper_bound">
         <listOfReactants>
           <speciesReference species="M_atp_c" stoichiometry="2" constant="true"/>
           <speciesReference species="M_gln__45__L_c" stoichiometry="1" constant="true"/>
@@ -10581,7 +10564,7 @@
           <speciesReference species="M_glyc_c" stoichiometry="1" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_CMPN" reversible="true" fast="false" fbc:lowerFluxBound="R_CMPN_lower_bound" fbc:upperFluxBound="R_CMPN_upper_bound">
+      <reaction id="R_CMPN" reversible="false" fast="false" fbc:lowerFluxBound="cobra_0_bound" fbc:upperFluxBound="R_CMPN_upper_bound">
         <listOfReactants>
           <speciesReference species="M_cmp_c" stoichiometry="1" constant="true"/>
           <speciesReference species="M_h2o_c" stoichiometry="1" constant="true"/>
@@ -10652,7 +10635,7 @@
           <speciesReference species="M_pyr_c" stoichiometry="1" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_cytd" reversible="true" fast="false" fbc:lowerFluxBound="R_cytd_lower_bound" fbc:upperFluxBound="R_cytd_upper_bound">
+      <reaction id="R_cytd" reversible="false" fast="false" fbc:lowerFluxBound="cobra_0_bound" fbc:upperFluxBound="R_cytd_upper_bound">
         <listOfReactants>
           <speciesReference species="M_cytd_c" stoichiometry="1" constant="true"/>
           <speciesReference species="M_h2o_c" stoichiometry="1" constant="true"/>
@@ -10778,7 +10761,7 @@
           <speciesReference species="M_h_c" stoichiometry="1" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_DCTPD" reversible="true" fast="false" fbc:lowerFluxBound="R_DCTPD_lower_bound" fbc:upperFluxBound="R_DCTPD_upper_bound">
+      <reaction id="R_DCTPD" reversible="false" fast="false" fbc:lowerFluxBound="cobra_0_bound" fbc:upperFluxBound="R_DCTPD_upper_bound">
         <listOfReactants>
           <speciesReference species="M_dctp_c" stoichiometry="1" constant="true"/>
           <speciesReference species="M_h2o_c" stoichiometry="1" constant="true"/>
@@ -11127,7 +11110,7 @@
           <speciesReference species="M_h_c" stoichiometry="1.88945975550783" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_EDA" reversible="true" fast="false" fbc:lowerFluxBound="R_EDA_lower_bound" fbc:upperFluxBound="R_EDA_upper_bound">
+      <reaction id="R_EDA" reversible="false" fast="false" fbc:lowerFluxBound="cobra_0_bound" fbc:upperFluxBound="R_EDA_upper_bound">
         <listOfReactants>
           <speciesReference species="M_2ddg6p_c" stoichiometry="1" constant="true"/>
         </listOfReactants>
@@ -11136,7 +11119,7 @@
           <speciesReference species="M_pyr_c" stoichiometry="1" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_EDD" reversible="true" fast="false" fbc:lowerFluxBound="R_EDD_lower_bound" fbc:upperFluxBound="R_EDD_upper_bound">
+      <reaction id="R_EDD" reversible="false" fast="false" fbc:lowerFluxBound="cobra_0_bound" fbc:upperFluxBound="R_EDD_upper_bound">
         <listOfReactants>
           <speciesReference species="M_6pgc_c" stoichiometry="1" constant="true"/>
         </listOfReactants>
@@ -13731,7 +13714,7 @@
           <speciesReference species="M_ppa_c" stoichiometry="1" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_PPC" reversible="true" fast="false" fbc:lowerFluxBound="R_PPC_lower_bound" fbc:upperFluxBound="R_PPC_upper_bound">
+      <reaction id="R_PPC" reversible="false" fast="false" fbc:lowerFluxBound="cobra_0_bound" fbc:upperFluxBound="R_PPC_upper_bound">
         <listOfReactants>
           <speciesReference species="M_co2tot_c" stoichiometry="1" constant="true"/>
           <speciesReference species="M_pep_c" stoichiometry="1" constant="true"/>
@@ -14431,7 +14414,7 @@
           <speciesReference species="M_h_c" stoichiometry="0.127407474003242" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_SERDL" reversible="true" fast="false" fbc:lowerFluxBound="R_SERDL_lower_bound" fbc:upperFluxBound="R_SERDL_upper_bound">
+      <reaction id="R_SERDL" reversible="false" fast="false" fbc:lowerFluxBound="cobra_0_bound" fbc:upperFluxBound="R_SERDL_upper_bound">
         <listOfReactants>
           <speciesReference species="M_ser__45__L_c" stoichiometry="1" constant="true"/>
           <speciesReference species="M_h_c" stoichiometry="0.0601212117375609" constant="true"/>
@@ -14806,7 +14789,7 @@
           <speciesReference species="M_h_c" stoichiometry="0.107942998126723" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_TRPS1" reversible="true" fast="false" fbc:lowerFluxBound="R_TRPS1_lower_bound" fbc:upperFluxBound="R_TRPS1_upper_bound">
+      <reaction id="R_TRPS1" reversible="false" fast="false" fbc:lowerFluxBound="cobra_0_bound" fbc:upperFluxBound="R_TRPS1_upper_bound">
         <listOfReactants>
           <speciesReference species="M_3ig3p_c" stoichiometry="1" constant="true"/>
           <speciesReference species="M_ser__45__L_c" stoichiometry="1" constant="true"/>
@@ -14818,7 +14801,7 @@
           <speciesReference species="M_trp__45__L_c" stoichiometry="1" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_TRPS2" reversible="true" fast="false" fbc:lowerFluxBound="R_TRPS2_lower_bound" fbc:upperFluxBound="R_TRPS2_upper_bound">
+      <reaction id="R_TRPS2" reversible="false" fast="false" fbc:lowerFluxBound="cobra_0_bound" fbc:upperFluxBound="R_TRPS2_upper_bound">
         <listOfReactants>
           <speciesReference species="M_indole_c" stoichiometry="1" constant="true"/>
           <speciesReference species="M_ser__45__L_c" stoichiometry="1" constant="true"/>
@@ -15472,7 +15455,7 @@
           <speciesReference species="M_h_c" stoichiometry="2" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_GALabc" reversible="true" fast="false" fbc:lowerFluxBound="R_GALabc_lower_bound" fbc:upperFluxBound="R_GALabc_upper_bound">
+      <reaction id="R_GALabc" reversible="false" fast="false" fbc:lowerFluxBound="cobra_0_bound" fbc:upperFluxBound="R_GALabc_upper_bound">
         <listOfReactants>
           <speciesReference species="M_gal_e" stoichiometry="1" constant="true"/>
           <speciesReference species="M_atp_c" stoichiometry="2" constant="true"/>
@@ -15487,7 +15470,7 @@
           <speciesReference species="M_charge_e" stoichiometry="2" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_GALt2" reversible="true" fast="false" fbc:lowerFluxBound="R_GALt2_lower_bound" fbc:upperFluxBound="R_GALt2_upper_bound">
+      <reaction id="R_GALt2" reversible="true" fast="false" fbc:lowerFluxBound="R_GALt2_lower_bound" fbc:upperFluxBound="cobra_0_bound">
         <listOfReactants>
           <speciesReference species="M_gal_e" stoichiometry="1" constant="true"/>
         </listOfReactants>
@@ -15585,7 +15568,7 @@
           <speciesReference species="M_h_e" stoichiometry="0.113148" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_GLYBabc" reversible="true" fast="false" fbc:lowerFluxBound="R_GLYBabc_lower_bound" fbc:upperFluxBound="R_GLYBabc_upper_bound">
+      <reaction id="R_GLYBabc" reversible="false" fast="false" fbc:lowerFluxBound="cobra_0_bound" fbc:upperFluxBound="R_GLYBabc_upper_bound">
         <listOfReactants>
           <speciesReference species="M_glyb_e" stoichiometry="1" constant="true"/>
           <speciesReference species="M_atp_c" stoichiometry="2" constant="true"/>
@@ -15601,7 +15584,7 @@
           <speciesReference species="M_charge_e" stoichiometry="1" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_GLYBt2r" reversible="true" fast="false" fbc:lowerFluxBound="R_GLYBt2r_lower_bound" fbc:upperFluxBound="R_GLYBt2r_upper_bound">
+      <reaction id="R_GLYBt2r" reversible="true" fast="false" fbc:lowerFluxBound="R_GLYBt2r_lower_bound" fbc:upperFluxBound="cobra_0_bound">
         <listOfReactants>
           <speciesReference species="M_glyb_e" stoichiometry="1" constant="true"/>
         </listOfReactants>
@@ -16189,7 +16172,7 @@
           <speciesReference species="M_tre6p_c" stoichiometry="1" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_VALabc" reversible="true" fast="false" fbc:lowerFluxBound="R_VALabc_lower_bound" fbc:upperFluxBound="R_VALabc_upper_bound">
+      <reaction id="R_VALabc" reversible="false" fast="false" fbc:lowerFluxBound="cobra_0_bound" fbc:upperFluxBound="R_VALabc_upper_bound">
         <listOfReactants>
           <speciesReference species="M_val__45__L_e" stoichiometry="1" constant="true"/>
           <speciesReference species="M_atp_c" stoichiometry="2" constant="true"/>
@@ -16205,7 +16188,7 @@
           <speciesReference species="M_charge_e" stoichiometry="1" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_VALt2r" reversible="true" fast="false" fbc:lowerFluxBound="R_VALt2r_lower_bound" fbc:upperFluxBound="R_VALt2r_upper_bound">
+      <reaction id="R_VALt2r" reversible="true" fast="false" fbc:lowerFluxBound="R_VALt2r_lower_bound" fbc:upperFluxBound="cobra_0_bound">
         <listOfReactants>
           <speciesReference species="M_val__45__L_e" stoichiometry="1" constant="true"/>
         </listOfReactants>
