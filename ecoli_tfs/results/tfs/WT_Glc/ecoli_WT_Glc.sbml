@@ -8452,11 +8452,12 @@
       <parameter sboTerm="SBO:0000625" id="R_ACLS_upper_bound" value="0.58260165184132" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACOATA_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACOATA_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_ACODA_lower_bound" value="1" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACODA_upper_bound" value="91.0186696369783" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACONT_lower_bound" value="-18.7027379442475" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACONT_upper_bound" value="91.0773077758658" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACOTA_lower_bound" value="-100" units="mmol_per_gDW_per_hr" constant="true"/>
-      <parameter sboTerm="SBO:0000625" id="R_ACOTA_upper_bound" value="100" units="mmol_per_gDW_per_hr" constant="true"/>
+      <parameter sboTerm="SBO:0000625" id="R_ACOTA_upper_bound" value="-0.1" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACS_lower_bound" value="-12.8346632258583" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ACS_upper_bound" value="90.9726683537965" units="mmol_per_gDW_per_hr" constant="true"/>
       <parameter sboTerm="SBO:0000625" id="R_ADA_upper_bound" value="98.1601023355149" units="mmol_per_gDW_per_hr" constant="true"/>
@@ -9774,7 +9775,7 @@
           <speciesReference species="M_coa_c" stoichiometry="1" constant="true"/>
         </listOfProducts>
       </reaction>
-      <reaction id="R_ACODA" reversible="false" fast="false" fbc:lowerFluxBound="cobra_0_bound" fbc:upperFluxBound="R_ACODA_upper_bound">
+      <reaction id="R_ACODA" reversible="false" fast="false" fbc:lowerFluxBound="R_ACODA_lower_bound" fbc:upperFluxBound="R_ACODA_upper_bound">
         <listOfReactants>
           <speciesReference species="M_acorn_c" stoichiometry="1" constant="true"/>
           <speciesReference species="M_h2o_c" stoichiometry="1" constant="true"/>
@@ -16273,7 +16274,11 @@
       </reaction>
     </listOfReactions>
     <fbc:listOfObjectives fbc:activeObjective="obj">
-      <fbc:objective fbc:id="obj" fbc:type="maximize"/>
+      <fbc:objective fbc:id="obj" fbc:type="maximize">
+        <fbc:listOfFluxObjectives>
+          <fbc:fluxObjective fbc:reaction="R_biomass_EX" fbc:coefficient="1"/>
+        </fbc:listOfFluxObjectives>
+      </fbc:objective>
     </fbc:listOfObjectives>
   </model>
 </sbml>
