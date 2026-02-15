@@ -29,6 +29,7 @@ class ThermodynamicSpaceMod:
         self.S_constraints = S_constraints
         self.reaction_ids = reaction_ids
         self.metabolites = metabolites
+        self.metabolite_ids = metabolites
         self.drg0_prime_mean = np.asarray(drg0_prime_mean).reshape(-1, 1)
         self.drg0_prime_cov_sqrt = np.asarray(drg0_prime_cov_sqrt)
         self.log_conc_cov = np.asarray(log_conc_cov)

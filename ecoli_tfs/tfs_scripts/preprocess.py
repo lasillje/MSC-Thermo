@@ -59,8 +59,8 @@ class Preprocess:
         self.model = read_sbml_model(cobra_file)
         self.model.objective = self.model.reactions.biomass_EX
 
-        for x in self.model.reactions:
-            print(x.id, x.lower_bound, x.upper_bound)
+       # for x in self.model.reactions:
+            #print(x.id, x.lower_bound, x.upper_bound)
 
         # Load drG0 info from provided files
         drg0_prime_mean_init = pd.read_csv(drG0file, index_col=0).values.T[0]
@@ -70,7 +70,7 @@ class Preprocess:
         if drG0covfile is not None:
             drg0_prime_cov_init = pd.read_csv(drG0covfile, index_col=0).values
 
-        print(len(drg0_prime_mean_init))
+        #print(len(drg0_prime_mean_init))
         # Record initial metabolites and remove specific ions (Mg)
         initial_mets_id = [m.id for m in self.model.metabolites]
         # remove Mg if present (safe)
@@ -91,8 +91,8 @@ class Preprocess:
         
         # Find blocked reactions and remove them (remember original indices)
         init_reactions_id = [r.id for r in self.model.reactions]
-        id_removed = find_blocked_reactions(self.model)
-        print(id_removed)
+        id_removed = [] #find_blocked_reactions(self.model)
+        #print(id_removed)
         rxn_removed = {
             old_idx: rid for old_idx, rid in enumerate(init_reactions_id) if rid in id_removed
         }
@@ -121,10 +121,11 @@ class Preprocess:
         # Restrict to FCA reactions
         # ~45 
         model_rxns = [x.id for x in self.model.reactions]
-        base_restrained = ['biomass_EX', 'EX_o2', 'biomass_ce', 'EX_ac', 'biomass', 'EX_so4', 'EX_oro', 'H2Ot', 'EX_pi', 'EX_nh3', 'EX_co2', 'EX_h', 'EX_glc', 'EX_h2o']
+        # If I include TREHe for thermodynamic variables the TFS/PMO completely breaks. TREHe functions as boundary reaction but is not designated as one, so I include it here
+        base_restrained = ['TREHe', 'biomass_EX', 'EX_o2', 'biomass_ce', 'EX_ac', 'biomass', 'EX_so4', 'EX_oro', 'H2Ot', 'Ht', 'EX_pi', 'EX_nh3', 'EX_co2', 'EX_h', 'EX_glc', 'EX_h2o', 'Cex', 'OROTex'] #'ATPHYD', 'ATPS4r', 'O2t', 'Ht', 'Cex', 'OROTex', 
         base_restrained = [x for x in base_restrained if x in model_rxns]
         
-        print(len(base_restrained), base_restrained)
+        #print(len(base_restrained), base_restrained)
 
         if restrained_rxns is not None:
             snd_ignored_idxs = restrained_rxns
@@ -149,7 +150,7 @@ class Preprocess:
 
         snd_ignored = [ self.model.reactions.index(self.model.reactions.get_by_id(x)) for x in snd_ignored_idxs ]
         #print(snd_ignored)
-        print(len(snd_ignored))
+        #print(len(snd_ignored))
         #pos_ht_rxn = [205, 206, 207, 208] ##posqt and HT are fully determined by drG0prime 
         all_ignored = snd_ignored #+ pos_ht_rxn
         snd_ignored_newidx = [
@@ -189,7 +190,7 @@ class Preprocess:
             idx for idx in range(len(drg0_prime_mean_init)) if idx not in all_ignored and idx in ridx_notremoved
         ]
 
-        print(idx_constrained_old)
+       # print(idx_constrained_old)
 
         self.drg0_prime_mean = drg0_prime_mean_init[idx_constrained_old]
         self.drg0_prime_cov_sqrt = drg0_prime_cov_sqrt_init[idx_constrained_old, :]#[:, idx_constrained_old]

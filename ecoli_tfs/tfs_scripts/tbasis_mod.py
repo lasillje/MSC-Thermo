@@ -96,7 +96,7 @@ class ThermodynamicSpaceBasismod(pta.ThermodynamicSpaceBasis):
         log_conc_drg0_mean = np.block([[log_conc_mean], [drg0_prime_mean]])
         log_conc_drg0_cov_sqrt = scipy.linalg.block_diag(log_conc_cov_sqrt, drg0_prime_cov_sqrt)
 
-        print(log_conc_drg0_mean)
+        #print(log_conc_drg0_mean)
     
         # Build mapping to observables
         mapping_blocks = []
