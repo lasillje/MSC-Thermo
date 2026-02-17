@@ -122,7 +122,7 @@ class Preprocess:
         # ~45 
         model_rxns = [x.id for x in self.model.reactions]
         # If I include TREHe for thermodynamic variables the TFS/PMO completely breaks. TREHe functions as boundary reaction but is not designated as one, so I include it here
-        base_restrained = ['TREHe', 'biomass_EX', 'EX_o2', 'biomass_ce', 'EX_ac', 'biomass', 'EX_so4', 'EX_oro', 'H2Ot', 'Ht', 'EX_pi', 'EX_nh3', 'EX_co2', 'EX_h', 'EX_glc', 'EX_h2o', 'Cex', 'OROTex'] #'ATPHYD', 'ATPS4r', 'O2t', 'Ht', 'Cex', 'OROTex', 
+        base_restrained = ['TREHe', 'biomass_EX', 'EX_o2', 'biomass_ce', 'EX_ac', 'biomass', 'EX_so4', 'EX_oro', 'H2Ot', 'EX_pi', 'EX_nh3', 'EX_co2', 'EX_h', 'EX_glc', 'EX_h2o', 'OROTex'] #'ATPHYD', 'ATPS4r', 'O2t', 'Ht', 'Cex', 'OROTex', 
         base_restrained = [x for x in base_restrained if x in model_rxns]
         
         #print(len(base_restrained), base_restrained)
