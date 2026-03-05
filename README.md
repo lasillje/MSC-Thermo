@@ -2,33 +2,17 @@
 
 ## Workflow
 
-# Loading model
+The repository consists of two main jupyter notebooks, present in the ecoli_flux_bounds and ecoli_tfs directories. The intended progression is to first go through the ecoli_flux_bounds notebook to subsequently use the generated data in the ecoli_tfs notebook.
 
-The base model is loaded using Thermo-Flux from the data in /datafiles/model.xlsx
-Additional experimental and metabolome data is loaded from the files in /regression/
-A comprehensive function to load a model based on various input files can be found in scripts/gen_model.py -> gen_model()
+The notebook within the ecoli_flux_bounds directory first provides a walkthrough of setting up a stoichiometric-thermodynamic model using Thermo-Flux, using the various datafiles found in ecoli_flux_bounds/datafiles/. Furthermore, this notebook contains code to perform thermodynamically constrained variability analyses (TVA) of metabolite concentrations and reaction fluxes (TFVA). The first part of the notebook sets up a stoichiometric-thermodynamic E. coli model using metabolome data and experimental flux data for two different physiological growth conditions (glucose and acetate). After this, for both conditions, metabolite TVA and TFVA is setup and performed using Thermo-Flux functionality. Lastly, a graphing section is present at the end that combines the results from the metabolite TVA and TFVA into a figure. The ecoli_flux_bounds/results/ folder holds the raw output data from the metabolite TVA and TFVA for both growth conditions (*_objval.txt files). Furthermore, the ecoli_flux_bounds/results/bounds/ directory holds the intermediate further processed results, with the ecoli_flux_bounds/results/bounds/composite/ directory holding the final TFVA data files for both conditions, currently these are the *_final_tfva.csv files, which are made through the combination of the *_metabolome_tfva.csv and *_no_metabolome_tfva.csv files (saved within the notebook using the merge_width_no_metabolome function).
 
-# Applying physiological data
 
-Additional physiological data and metabolome data can be applied to the base model. This can be done using the function apply_physio_data() found in scripts/gen_model.py
-This requires a functional thermo-flux model to already be loaded on which the physio and metabolome data will be applied
 
-This is done for various growth conditions: WT-Glc_I, WT-Ace_I
+The notebook within the ecoli_tfs directory builds upon the previous notebook, using the metabolite TVA and TFVA results to perform thermodynamically constrained flux sampling using the PTA library (installation instructions below). Stoichiometric-thermodynamic models are again setup using the ecoli_tfs/datafiles/ files, in addition to using the completed metabolite TVA and TFVA files in ecoli_tfs/results and ecoli_tfs/results/bounds respectively. Thermodynamically constrained flux sampling is setup and performed using the PTA library, of which the notebook provides a walkthrough of generating the necessary files to perform this analysis in a timely manner, as the used model is quite large. To this end, additional flux-coupling analysis is also performed, which provides a network of fully coupled reactions (flux of reaction A has constant effect on flux of reaction B), this way, the total amount of reactiosn that need to be thermodynamically constrained in the flux sampling can be reduced, speeding up the process. Lastly, a graphing part is added as well using the resulting thermodynamically constrained flux sampling distributions.
 
-# Removing blocked reactions
+# PTA installation
 
-After physiological and metabolome data is applied, blocked reactions are listed using list_blocked_reactions() from scripts/reaction_utils.py
-This returns a list of blocked reactions, in this case we don't allow other excretions in our model, and we do not open exchange fluxes when finding blocked reactions.
-After this, all blocked reactions are removed from the model, using tmodel.remove_reactions(remove_orphans=True). Note that remove_orphans must be True, otherwise the model becomes infeasible.
-This is done to make the model as small but functional as possible, saving disk space and optimization time down the line. Another approach, setting the flux bounds of blocked reactions to [0, 0], was discarded as the optimization time would exceed 6+ hours for some reactions.
-
-# Thermodynamic FVA
-
-For each growth condition, thermodynamic FVA (TFVA) was done to constrain flux space further. For each condition, the individual reactions are output as gurobi model with two scenarios (minimize and maximize). This is done in analysis_thermo_fva.ipynb. The resulting gurobi model files are uploaded to the cluster on which they are optimized. After this, bounds are updated for each reaction in the thermo-flux model using tfva_update_bounds() from scripts/reaction_utils
-
-# Thermodynamic Sampling
-
-For thermodynamic smapling, the PTA package is used (https://gitlab.com/csb.ethz/pta). Installation on Windows is not possible, so on Windows I used WSL. Then, manually build the PTA package from the source.
+For thermodynamically constrained flux sampling, the PTA package is used (https://gitlab.com/csb.ethz/pta). Installation on Windows is not possible, so on Windows I used WSL. Then, manually build the PTA package from the source.
 With this, issues may still arise. The exact steps I followed to get it to work:
 First, if not on the cluster then install the gurobi python interface with 
 ```bash

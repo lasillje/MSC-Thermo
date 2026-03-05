@@ -5,10 +5,12 @@ __pycache__/
 
 # C extensions
 *.so
+*.png
 
 # Distribution / packaging
 .Python
 tfva/
+old/
 build/
 develop-eggs/
 dist/
@@ -25,6 +27,7 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+*.feather
 output/
 *.sqlite
 MANIFEST
@@ -58,6 +61,12 @@ cover/
 *.mo
 *.pot
 *.7z
+*.gz
+*.mps
+*.attr
+*.prm
+*.sol
+*.Identifier
 
 # Django stuff:
 *.log
