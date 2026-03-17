@@ -31,6 +31,9 @@ share/python-wheels/
 output/
 *.sqlite
 MANIFEST
+ecoli_tfs/hpc/
+ecoli_tfs/pmo_assessments/
+ecoli_tfs/tfs_fluxes/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
