@@ -1,5 +1,20 @@
 ## Folder Structure
 
+- tfs_ecoli.ipynb
+    - Main jupyter notebook used to generate cluster files for the TFS
+
+- tfs_drg_and_fluxes.py
+    - Python script to run drG and flux sampling in one run on the cluster for a single condition
+
+- run_tfs_drg_fluxes.sh
+    - Bash file to run the TFS sampling based on the previous python script
+
+- tfs_points.py
+    - Python script to generate initial thermodynamic points for use on the cluster
+
+- run_tfs_points.sh
+    - Bash file to generate initial thermodynamic points for subsequent TFS on the cluster
+
 - datafiles/
     - Contains all necessary files to create and load the stoichiometric E. coli model
 - results/

@@ -34,6 +34,7 @@ MANIFEST
 ecoli_tfs/hpc/
 ecoli_tfs/pmo_assessments/
 ecoli_tfs/tfs_fluxes/
+ecoli_flux_bounds/presentations/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
